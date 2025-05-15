@@ -1,4 +1,4 @@
-package net.venitstudios.DarkComputers;
+package net.venitstudios.darkcomputers;
 
 import java.util.List;
 import java.util.Set;
