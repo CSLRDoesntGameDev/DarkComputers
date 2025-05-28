@@ -14,5 +14,6 @@ public class ModItemModelProvider extends ItemModelProvider {
     @Override
     protected void registerModels() {
         basicItem(ModItems.CPU_BASE.get());
+        basicItem(ModItems.FLOPPY_DISK.get());
     }
 }

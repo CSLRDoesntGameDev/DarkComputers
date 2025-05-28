@@ -20,6 +20,7 @@ public class ModCreativeTabs {
                     .title(Component.translatable("creative.darkcomputers.main_tab"))
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.CPU_BASE);
+                        output.accept(ModItems.FLOPPY_DISK);
                         output.accept(ModBlocks.TERMINAL_BLOCK);
                     })
                     .build());

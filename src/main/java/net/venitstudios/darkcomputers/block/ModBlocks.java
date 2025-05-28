@@ -9,6 +9,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.venitstudios.darkcomputers.DarkComputers;
+import net.venitstudios.darkcomputers.block.custom.TerminalBlock;
 import net.venitstudios.darkcomputers.item.ModItems;
 
 import java.util.function.Supplier;
@@ -18,8 +19,7 @@ public class ModBlocks {
             DeferredRegister.createBlocks(DarkComputers.MOD_ID);
 
     public static final DeferredBlock<Block> TERMINAL_BLOCK = registerBlock("terminal_block",
-            () -> new Block(BlockBehaviour.Properties.of().strength(3f).requiresCorrectToolForDrops().sound(SoundType.STONE)));
-
+            () -> new TerminalBlock(BlockBehaviour.Properties.of().strength(3f).requiresCorrectToolForDrops().sound(SoundType.STONE)));
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {
         DeferredBlock<T> toReturn = BLOCKS.register(name, block);
@@ -29,6 +29,8 @@ public class ModBlocks {
     private static <T extends Block> void registerBlockItem(String name, DeferredBlock<T> block ) {
         ModItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
     }
+
+
 
     public static void register(IEventBus eventBus) {
         BLOCKS.register(eventBus);

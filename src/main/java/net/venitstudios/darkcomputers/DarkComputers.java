@@ -1,9 +1,25 @@
 package net.venitstudios.darkcomputers;
 
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.level.storage.LevelStorageSource;
+import net.neoforged.fml.event.lifecycle.FMLDedicatedServerSetupEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.venitstudios.darkcomputers.block.ModBlocks;
+import net.venitstudios.darkcomputers.block.entity.ModBlockEntities;
+import net.venitstudios.darkcomputers.component.ModDataComponents;
 import net.venitstudios.darkcomputers.item.ModCreativeTabs;
 import net.venitstudios.darkcomputers.item.ModItems;
+import net.venitstudios.darkcomputers.screen.ModMenuTypes;
+import net.venitstudios.darkcomputers.screen.custom.TerminalInvScreen;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -21,16 +37,24 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Objects;
+
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(DarkComputers.MOD_ID)
 public class    DarkComputers {
     public static final String MOD_ID = "darkcomputers";
     public static final Logger LOGGER = LogUtils.getLogger();
+    public static Path levelPath;
+    public static Path modDataPath;
+    public static Path modDataStoragePath;
+
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
     public DarkComputers(IEventBus modEventBus, ModContainer modContainer)
     {
-
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
 
@@ -41,12 +65,46 @@ public class    DarkComputers {
         ModCreativeTabs.register(modEventBus);
 
         ModItems.register(modEventBus);
+
         ModBlocks.register(modEventBus);
+        ModBlockEntities.register(modEventBus);
+
+        ModMenuTypes.register(modEventBus);
+
+        ModDataComponents.register(modEventBus);
         // Register the item to a creative tab
         modEventBus.addListener(this::addCreative);
+        NeoForge.EVENT_BUS.addListener(this::onWorldLoad);
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+    }
+
+    private void onWorldLoad(LevelEvent.Load event) {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server != null) {
+            Path worldPath = server.getWorldPath(LevelResource.ROOT).toAbsolutePath();
+            DarkComputers.LOGGER.info("Game Loaded Level " + worldPath);
+            levelPath = worldPath;
+
+            modDataPath = Path.of(worldPath.toString() + "/data/" + DarkComputers.MOD_ID);
+            modDataStoragePath = Path.of(worldPath.toString() + "/data/" + DarkComputers.MOD_ID + "/storage/");
+
+            if (!Files.isDirectory(modDataStoragePath)) {
+                boolean created = new File(modDataPath.toString()).mkdirs();
+                if (created) {
+                    DarkComputers.LOGGER.info("Sucesfully Made Folder for " + DarkComputers.MOD_ID + " at " + modDataPath.toString());
+                }
+            }
+
+            if (!Files.isDirectory(modDataStoragePath)) {
+                boolean created = new File(modDataStoragePath.toString()).mkdirs();
+                if (created) {
+                    DarkComputers.LOGGER.info("Sucesfully Made Folder for " + DarkComputers.MOD_ID + " Storage items at " + modDataStoragePath.toString());
+                }
+            }
+
+        }
     }
 
     private void commonSetup(final FMLCommonSetupEvent event)  {
@@ -62,6 +120,12 @@ public class    DarkComputers {
     // You can use SubscribeEvent and let the Event Bus discover methods to call
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
+        DarkComputers.LOGGER.info("SERVER STARTING");
+    }
+    @SubscribeEvent
+    public void onServerStarted(ServerStartingEvent event) {
+        DarkComputers.LOGGER.info("SERVER STARTED");
+        MinecraftServer server = event.getServer();
     }
 
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
@@ -69,6 +133,13 @@ public class    DarkComputers {
     public static class ClientModEvents {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
+
         }
+
+        @SubscribeEvent
+        public static void registerScreens(RegisterMenuScreensEvent event) {
+            event.register(ModMenuTypes.TERMINAL_MENU.get(), TerminalInvScreen::new);
+        }
+
     }
 }

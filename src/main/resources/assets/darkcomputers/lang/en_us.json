@@ -1,3 +1,9 @@
 {
-  "creative.darkcomputers.main_tab": "DarkComputers"
+  "item.darkcomputers.cpu_a": "Central Processing Unit (CPU)",
+  "creative.darkcomputers.main_tab": "DarkComputers",
+
+  "block.darkcomputers.terminal_block": "Terminal",
+
+  "tooltip.darkcomputers.terminal_block": "Could be worse. could be a dumb terminal.",
+  "tooltip_alt.darkcomputers.terminal_block": "Used for writing text."
 }
