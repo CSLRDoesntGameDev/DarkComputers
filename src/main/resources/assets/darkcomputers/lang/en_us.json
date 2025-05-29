@@ -1,9 +1,13 @@
 {
   "item.darkcomputers.cpu_a": "Central Processing Unit (CPU)",
+  "item.darkcomputers.floppy_a": "Floppy Disk",
   "creative.darkcomputers.main_tab": "DarkComputers",
 
   "block.darkcomputers.terminal_block": "Terminal",
 
-  "tooltip.darkcomputers.terminal_block": "Could be worse. could be a dumb terminal.",
-  "tooltip_alt.darkcomputers.terminal_block": "Used for writing text."
+  "tooltip.darkcomputers.terminal_block": "Could be worse. Could be a Dumb Terminal.",
+  "tooltip_alt.darkcomputers.terminal_block": "Used for writing text.",
+
+  "gui.darkcomputers.terminal.request_item": "<- Please Enter Storage Item",
+  "gui.darkcomputers.terminal.request_selection": "Select a File to Edit"
 }

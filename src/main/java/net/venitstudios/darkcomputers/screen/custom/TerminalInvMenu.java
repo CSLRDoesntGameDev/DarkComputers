@@ -12,6 +12,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.items.SlotItemHandler;
 import net.venitstudios.darkcomputers.block.ModBlocks;
 import net.venitstudios.darkcomputers.block.entity.TerminalBlockEntity;
+import net.venitstudios.darkcomputers.computing.components.storage.GenericStorageItem;
+import net.venitstudios.darkcomputers.item.FilteredSlot;
+import net.venitstudios.darkcomputers.item.ModItems;
 import net.venitstudios.darkcomputers.screen.ModMenuTypes;
 
 public class TerminalInvMenu extends AbstractContainerMenu {
@@ -29,20 +32,20 @@ public class TerminalInvMenu extends AbstractContainerMenu {
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
 
-        this.addSlot(new SlotItemHandler(this.blockEntity.inventory, 0, -18, 18));
+        this.addSlot(new FilteredSlot(this.blockEntity.inventory, 0, -18, 18, ModItems.FLOPPY_DISK.get(), 1));
     }
 
     private void addPlayerInventory(Inventory playerInventory) {
         for (int i = 0; i < 3; ++i) {
             for (int l = 0; l < 9; ++l) {
-                this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 8 + l * 18, 140 + i * 18));
+                this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 48 + l * 18, 173 + i * 18));
             }
         }
     }
 
     private void addPlayerHotbar(Inventory playerInventory) {
         for (int i = 0; i < 9; ++i) {
-            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 198));
+            this.addSlot(new Slot(playerInventory, i, 48 + i * 18, 231));
         }
     }
 

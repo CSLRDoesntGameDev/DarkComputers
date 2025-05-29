@@ -17,8 +17,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.ItemStackHandler;
+import net.venitstudios.darkcomputers.DarkComputers;
+import net.venitstudios.darkcomputers.computing.components.storage.GenericStorageItem;
 import net.venitstudios.darkcomputers.computing.components.terminal.TextEditor;
 import net.venitstudios.darkcomputers.screen.custom.TerminalInvMenu;
+import net.venitstudios.darkcomputers.screen.custom.TerminalInvScreen;
 import org.jetbrains.annotations.Nullable;
 
 public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
@@ -31,16 +34,21 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
+            storageStack = inventory.getStackInSlot(slot);
             if(!level.isClientSide()) {
                 level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
             }
         }
     };
+    public ItemStack storageStack = ItemStack.EMPTY;
+
+
     public TextEditor editor;
+    public boolean editingFile = false;
 
     public TerminalBlockEntity(BlockPos pos, BlockState blockState) {
         super(ModBlockEntities.TERMINAL_BE.get(), pos, blockState);
-        this.editor = new TextEditor();
+        this.editor = new TextEditor(this);
     }
 
     public void clearContents() {
@@ -73,10 +81,10 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
         return Component.literal("Terminal");
     }
 
-    @Nullable
     @Override
     public AbstractContainerMenu createMenu(int i, Inventory inventory, Player player) {
-        return new TerminalInvMenu(i, inventory, this);
+        TerminalInvMenu menu = new TerminalInvMenu(i, inventory, this);
+        return menu;
     }
 
     @Nullable
