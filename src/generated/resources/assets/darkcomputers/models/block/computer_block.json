@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "darkcomputers:block/opencomputers/case_side",
+    "east": "darkcomputers:block/opencomputers/case_side",
+    "north": "darkcomputers:block/opencomputers/case_front",
+    "south": "darkcomputers:block/opencomputers/case_side",
+    "up": "darkcomputers:block/opencomputers/case_top",
+    "west": "darkcomputers:block/opencomputers/case_side"
+  }
+}

@@ -1,4 +1,4 @@
-package net.venitstudios.darkcomputers.block.entity;
+package net.venitstudios.darkcomputers.block.entity.custom;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -7,6 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
@@ -14,17 +15,24 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.ItemStackHandler;
-import net.venitstudios.darkcomputers.DarkComputers;
-import net.venitstudios.darkcomputers.computing.components.storage.GenericStorageItem;
-import net.venitstudios.darkcomputers.computing.components.terminal.TextEditor;
-import net.venitstudios.darkcomputers.screen.custom.TerminalInvMenu;
-import net.venitstudios.darkcomputers.screen.custom.TerminalInvScreen;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.venitstudios.darkcomputers.block.entity.ModBlockEntities;
+import net.venitstudios.darkcomputers.computing.components.computer.BusDC16;
+import net.venitstudios.darkcomputers.network.ModPayloads;
+import net.venitstudios.darkcomputers.screen.custom.display.ComputerMenu;
 import org.jetbrains.annotations.Nullable;
 
-public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
+import java.util.Arrays;
+
+public class ComputerBlockEntity extends BlockEntity implements MenuProvider {
+    public ComputerBlockEntity(BlockPos pos, BlockState blockState) {
+        super(ModBlockEntities.COMPUTER_BE.get(), pos, blockState);
+        this.bus = new BusDC16();
+    }
     public final ItemStackHandler inventory = new ItemStackHandler(1) {
         @Override
         protected int getStackLimit(int slot, ItemStack stack) {
@@ -35,24 +43,45 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
         protected void onContentsChanged(int slot) {
             setChanged();
             storageStack = inventory.getStackInSlot(slot);
-            if(!level.isClientSide()) {
+            if(level != null && !level.isClientSide()) {
                 level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
             }
         }
     };
     public ItemStack storageStack = ItemStack.EMPTY;
+    public BusDC16 bus;
 
 
-    public TextEditor editor;
-    public boolean editingFile = false;
 
-    public TerminalBlockEntity(BlockPos pos, BlockState blockState) {
-        super(ModBlockEntities.TERMINAL_BE.get(), pos, blockState);
-        this.editor = new TextEditor(this);
+    // The signature of this method matches the signature of the BlockEntityTicker functional interface.
+    public static void tick(Level level, BlockPos pos, BlockState state, ComputerBlockEntity blockEntity) {
+        if(level.getBlockEntity(pos) instanceof ComputerBlockEntity computerBlockEntity) {
+            float detectionRange = 7f;
+        char[] buffer = computerBlockEntity.bus.displayDriver.screenBuffer;
+        if (!Arrays.equals(buffer, new char[buffer.length])) {
+            PacketDistributor.sendToPlayersNear(
+                    (ServerLevel) level, null,
+                    pos.getX(), pos.getY(), pos.getZ(), detectionRange,
+                    new ModPayloads.cmpUpdate(pos, new String(buffer).getBytes(), computerBlockEntity.bus.cyclesRan)
+            );
+        }
+            if (!level.isClientSide) {
+                if (!blockEntity.bus.processor.halted) {
+                    for (int i = 0; i < blockEntity.bus.cyclesPerTick; i++) {
+                        blockEntity.bus.processor.clockCycle();
+                    }
+                }
+            }
+        }
     }
+
 
     public void clearContents() {
         inventory.setStackInSlot(0, ItemStack.EMPTY);
+    }
+
+    public void runBus() {
+
     }
 
     public void dropItems() {
@@ -60,7 +89,6 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
         for(int i = 0; i < inventory.getSlots(); i++) {
             inv.setItem(i, inventory.getStackInSlot(i));
         }
-
         Containers.dropContents(this.level, this.worldPosition, inv);
     }
 
@@ -78,12 +106,12 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
 
     @Override
     public Component getDisplayName() {
-        return Component.literal("Terminal");
+        return Component.literal("Computer");
     }
 
     @Override
     public AbstractContainerMenu createMenu(int i, Inventory inventory, Player player) {
-        TerminalInvMenu menu = new TerminalInvMenu(i, inventory, this);
+        ComputerMenu menu = new ComputerMenu(i, inventory, this);
         return menu;
     }
 

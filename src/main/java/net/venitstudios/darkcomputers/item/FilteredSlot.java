@@ -15,7 +15,7 @@ public class FilteredSlot extends SlotItemHandler {
     }
     @Override
     public boolean mayPlace(ItemStack stack) {
-        return (stack.getItem() == allowedItem);
+        return (stack.getItem().equals(allowedItem));
     }
 
     @Override

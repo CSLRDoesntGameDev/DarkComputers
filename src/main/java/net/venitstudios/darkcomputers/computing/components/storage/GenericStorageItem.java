@@ -17,40 +17,51 @@ import java.util.UUID;
 
 public class GenericStorageItem extends Item {
     public GenericStorageItem(Properties properties) { super(properties); }
-    private static String getStorageUUID(ItemStack stack) { return stack.get(ModDataComponents.ITEM_UUID); }
-    private static String getStoragePath(ItemStack stack) { return DarkComputers.modDataStoragePath + "/" + getStorageUUID(stack); }
-    private static String newUUID() { return UUID.randomUUID().toString(); }
-    private static boolean checkUUID(ItemStack stack) { return stack.has(ModDataComponents.ITEM_UUID); }
-    private static boolean checkDirectory(ItemStack stack) {
+
+    public static String getStorageUUID(ItemStack stack) { return stack.get(ModDataComponents.ITEM_UUID); }
+    public static String getStoragePath(ItemStack stack) { return DarkComputers.modDataStoragePath + "/" + getStorageUUID(stack) + "/"; }
+    public static String newUUID() { return UUID.randomUUID().toString(); }
+    public static boolean checkUUID(ItemStack stack) { return stack.has(ModDataComponents.ITEM_UUID); }
+    public static boolean checkDirectory(ItemStack stack) {
         if (stack.has(ModDataComponents.ITEM_UUID))
             return new File(getStoragePath(stack)).isDirectory();
         return false;
     }
-    public static File[] getFilesAt(ItemStack stack) { return new File(getStoragePath(stack)).listFiles(); }
+    public static void ensurePath(ItemStack stack) {
+        if (!checkDirectory(stack)) {
+            boolean created = new File(getStoragePath(stack)).mkdirs();
+            DarkComputers.LOGGER.info("made file? " + created);
+        }
+    }
+    public static File[] getFilesAt(ItemStack stack) {
+        File[] fs = new File(getStoragePath(stack)).listFiles();
+        if (fs != null) return fs;
+        return new File[0];
+    }
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
         if (!checkUUID(stack)) stack.set(ModDataComponents.ITEM_UUID, newUUID());
-        if (!checkDirectory(stack)) {
-            new File(getStoragePath(stack)).mkdir();
-        }
+
         super.inventoryTick(stack, level, entity, slotId, isSelected);
     }
+
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         if (checkUUID(stack)) tooltipComponents.add(Component.literal(getStorageUUID(stack)).withColor(0xFFababab));
+        ensurePath(stack);
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
     }
 
     public static void writeData(String fileName, ItemStack stack, int startAddress, byte[] data) {
-        Path filePath = Path.of(getStoragePath(stack) + "/" + fileName);
+        Path filePath = Path.of(getStoragePath(stack) + fileName);
         File fi = new File(filePath.toUri());
+
+        ensurePath(stack);
 
         if (!fi.exists()) {
                 try {
-                    boolean dirsCreated = fi.mkdirs();
                     boolean fileCreated = fi.createNewFile();
-                    if (!dirsCreated) DarkComputers.LOGGER.info("Failed to create directory for: " + filePath.toString());
                     if (!fileCreated) DarkComputers.LOGGER.info("Failed to create file: " + filePath.toString());
 
                 } catch (IOException e) {
@@ -69,7 +80,7 @@ public class GenericStorageItem extends Item {
         }
     }
     public static byte[] readData(String fileName, ItemStack stack, int startAddress, int byteCount) {
-        Path filePath = Path.of(getStoragePath(stack) + "/" + fileName);
+        Path filePath = Path.of(getStoragePath(stack) + fileName);
         if (new File(filePath.toUri()).exists()) {
 
             try (RandomAccessFile raf = new RandomAccessFile(filePath.toFile(), "r")) {

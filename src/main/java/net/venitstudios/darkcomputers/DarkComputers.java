@@ -1,25 +1,20 @@
 package net.venitstudios.darkcomputers;
 
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.storage.LevelResource;
-import net.minecraft.world.level.storage.LevelStorageSource;
-import net.neoforged.fml.event.lifecycle.FMLDedicatedServerSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
-import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.venitstudios.darkcomputers.block.ModBlocks;
 import net.venitstudios.darkcomputers.block.entity.ModBlockEntities;
 import net.venitstudios.darkcomputers.component.ModDataComponents;
 import net.venitstudios.darkcomputers.item.ModCreativeTabs;
 import net.venitstudios.darkcomputers.item.ModItems;
+import net.venitstudios.darkcomputers.network.ModPayloads;
 import net.venitstudios.darkcomputers.screen.ModMenuTypes;
-import net.venitstudios.darkcomputers.screen.custom.TerminalInvScreen;
+import net.venitstudios.darkcomputers.screen.custom.programmer.ProgrammerScreen;
+import net.venitstudios.darkcomputers.screen.custom.terminal.TerminalScreen;
+import net.venitstudios.darkcomputers.screen.custom.display.ComputerScreen;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -34,13 +29,11 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(DarkComputers.MOD_ID)
@@ -72,8 +65,8 @@ public class    DarkComputers {
         ModMenuTypes.register(modEventBus);
 
         ModDataComponents.register(modEventBus);
-        // Register the item to a creative tab
-        modEventBus.addListener(this::addCreative);
+        modEventBus.register(ModPayloads.class);
+
         NeoForge.EVENT_BUS.addListener(this::onWorldLoad);
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
@@ -110,12 +103,6 @@ public class    DarkComputers {
     private void commonSetup(final FMLCommonSetupEvent event)  {
     }
 
-    // Add the example block item to the building blocks tab
-    private void addCreative(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(ModItems.CPU_BASE);
-        }
-    }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call
     @SubscribeEvent
@@ -128,6 +115,7 @@ public class    DarkComputers {
         MinecraftServer server = event.getServer();
     }
 
+
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
     @EventBusSubscriber(modid = MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
@@ -138,7 +126,9 @@ public class    DarkComputers {
 
         @SubscribeEvent
         public static void registerScreens(RegisterMenuScreensEvent event) {
-            event.register(ModMenuTypes.TERMINAL_MENU.get(), TerminalInvScreen::new);
+            event.register(ModMenuTypes.TERMINAL_MENU.get(), TerminalScreen::new);
+            event.register(ModMenuTypes.COMPUTER_DISPLAY_MENU.get(), ComputerScreen::new);
+            event.register(ModMenuTypes.PROGRAMMER_MENU.get(), ProgrammerScreen::new);
         }
 
     }

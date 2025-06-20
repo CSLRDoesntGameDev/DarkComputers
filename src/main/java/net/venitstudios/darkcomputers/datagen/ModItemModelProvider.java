@@ -1,6 +1,7 @@
 package net.venitstudios.darkcomputers.datagen;
 
 import net.venitstudios.darkcomputers.DarkComputers;
+import net.venitstudios.darkcomputers.block.ModBlocks;
 import net.venitstudios.darkcomputers.item.ModItems;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
@@ -15,5 +16,7 @@ public class ModItemModelProvider extends ItemModelProvider {
     protected void registerModels() {
         basicItem(ModItems.CPU_BASE.get());
         basicItem(ModItems.FLOPPY_DISK.get());
+        basicItem(ModItems.EEPROM.get());
+//        simpleBlockItem(ModBlocks.TERMINAL_BLOCK.get());
     }
 }

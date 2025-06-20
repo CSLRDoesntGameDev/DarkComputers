@@ -1,4 +1,4 @@
-package net.venitstudios.darkcomputers.screen.custom;
+package net.venitstudios.darkcomputers.screen.custom.terminal;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -9,22 +9,21 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.neoforged.neoforge.items.SlotItemHandler;
 import net.venitstudios.darkcomputers.block.ModBlocks;
-import net.venitstudios.darkcomputers.block.entity.TerminalBlockEntity;
-import net.venitstudios.darkcomputers.computing.components.storage.GenericStorageItem;
+
+import net.venitstudios.darkcomputers.block.entity.custom.TerminalBlockEntity;
 import net.venitstudios.darkcomputers.item.FilteredSlot;
 import net.venitstudios.darkcomputers.item.ModItems;
 import net.venitstudios.darkcomputers.screen.ModMenuTypes;
 
-public class TerminalInvMenu extends AbstractContainerMenu {
+public class TerminalMenu extends AbstractContainerMenu {
     public final TerminalBlockEntity blockEntity;
     private final Level level;
-    public TerminalInvMenu(int containerId, Inventory inv, FriendlyByteBuf extraData) {
+    public TerminalMenu(int containerId, Inventory inv, FriendlyByteBuf extraData) {
         this(containerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()));
     }
 
-    public TerminalInvMenu(int containerId, Inventory inv, BlockEntity blockEntity) {
+    public TerminalMenu(int containerId, Inventory inv, BlockEntity blockEntity) {
         super(ModMenuTypes.TERMINAL_MENU.get(), containerId);
         this.blockEntity = ((TerminalBlockEntity)blockEntity);
         this.level = inv.player.level();
@@ -108,4 +107,3 @@ public class TerminalInvMenu extends AbstractContainerMenu {
 
 
 }
-

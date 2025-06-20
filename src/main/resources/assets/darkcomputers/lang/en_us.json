@@ -8,6 +8,6 @@
   "tooltip.darkcomputers.terminal_block": "Could be worse. Could be a Dumb Terminal.",
   "tooltip_alt.darkcomputers.terminal_block": "Used for writing text.",
 
-  "gui.darkcomputers.terminal.request_item": "<- Please Enter Storage Item",
-  "gui.darkcomputers.terminal.request_selection": "Select a File to Edit"
+  "gui.darkcomputers.terminal.request_item": "<- Please Provide a Floppy Disk.",
+  "gui.darkcomputers.terminal.request_selection": "Select a File to Edit (^n to make a new file)"
 }

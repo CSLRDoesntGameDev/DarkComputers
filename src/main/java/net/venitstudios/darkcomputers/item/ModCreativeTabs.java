@@ -19,10 +19,19 @@ public class ModCreativeTabs {
             () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.CPU_BASE.get()))
                     .title(Component.translatable("creative.darkcomputers.main_tab"))
                     .displayItems((itemDisplayParameters, output) -> {
+
+                        // items
                         output.accept(ModItems.CPU_BASE);
                         output.accept(ModItems.FLOPPY_DISK);
+                        output.accept(ModItems.EEPROM);
+
+                        // blocks
+
                         output.accept(ModBlocks.TERMINAL_BLOCK);
+                        output.accept(ModBlocks.COMPUTER_BLOCK);
+                        output.accept(ModBlocks.PROGRAMMER_BLOCK);
                     })
+
                     .build());
     public static void register(IEventBus eventBus) {
         CREATIVE_MODE_TAB.register(eventBus);

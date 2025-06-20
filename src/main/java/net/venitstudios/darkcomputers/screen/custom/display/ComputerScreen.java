@@ -1,0 +1,111 @@
+package net.venitstudios.darkcomputers.screen.custom.display;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Inventory;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.venitstudios.darkcomputers.DarkComputers;
+import net.venitstudios.darkcomputers.computing.components.processor.ProcessorDC16;
+import net.venitstudios.darkcomputers.network.ModPayloads;
+
+public class ComputerScreen extends AbstractContainerScreen<ComputerMenu> {
+
+    private static final ResourceLocation GUI_TEXTURE = ResourceLocation.fromNamespaceAndPath(DarkComputers.MOD_ID, "textures/gui/expanded_background.png");
+    private static final ResourceLocation SLOT_TEXTURE = ResourceLocation.fromNamespaceAndPath(DarkComputers.MOD_ID, "textures/gui/vanilla/gui_slot.png");
+    private static final ResourceLocation TAB_TEXTURE = ResourceLocation.fromNamespaceAndPath(DarkComputers.MOD_ID, "textures/gui/vanilla/tab_left_top.png");
+    private ComputerMenu cdm;
+    public ComputerScreen(ComputerMenu menu, Inventory playerInventory, Component title) {
+        super(menu, playerInventory, title);
+        this.imageWidth = 256;
+        this.imageHeight = 256;
+        this.cdm = menu;
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        PacketDistributor.sendToServer(new ModPayloads.ioKeyAction(cdm.blockEntity.getBlockPos(), keyCode, modifiers, true));
+        if (Minecraft.getInstance().options.keyInventory.matches(keyCode, scanCode)) {
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+        PacketDistributor.sendToServer(new ModPayloads.ioKeyAction(cdm.blockEntity.getBlockPos(), keyCode, modifiers, false));
+        if (Minecraft.getInstance().options.keyInventory.matches(keyCode, scanCode)) {
+            return true;
+        }
+        return super.keyReleased(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+
+        this.addRenderableWidget(Button.builder(Component.literal("CPU Cycle"), (button) -> {
+            ProcessorDC16 cpu = cdm.blockEntity.bus.processor;
+            cpu.clockCycle();
+        })
+        .pos(this.leftPos + this.imageWidth + 64, this.topPos + 32)
+        .size(64, 32)
+        .build()
+        );
+
+        this.addRenderableWidget(Button.builder(Component.literal("CPU Reset"), (button) -> {
+                            PacketDistributor.sendToServer(new ModPayloads.cpuResetReq(cdm.blockEntity.getBlockPos()));
+                            this.minecraft.screen.setFocused(null);
+                        })
+                        .pos(this.leftPos + this.imageWidth + 64, this.topPos + 64)
+                        .size(64, 32)
+                        .build()
+        );
+    }
+
+    @Override
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        renderTooltip(guiGraphics, mouseX, mouseY);
+        int x1 = this.leftPos + 10;
+        int y1 = this.topPos + 20;
+
+        char[] displayBuffer = cdm.blockEntity.bus.displayDriver.screenBuffer;
+
+        for (int x = 0; x < 29; x++) {
+            for (int y = 0; y < 17; y++) {
+                guiGraphics.drawString(this.font, String.valueOf(displayBuffer[(y * 29)+ x]), x1 + (x * 8), y1 + (y * 8), 0xFFFFFFFF);
+            }
+
+            guiGraphics.drawString(this.font, String.valueOf(cdm.blockEntity.bus.cyclesRan), this.leftPos-32, this.topPos+32, 0xff00ff00);
+        }
+
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+        int x = this.leftPos;
+        int y = this.topPos;
+        guiGraphics.blit(TAB_TEXTURE, x-28, y + 12, 0, 0, 28, 28, 32, 28);
+        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, imageWidth, imageHeight, 256, 256);
+        guiGraphics.blit(SLOT_TEXTURE, x-19, y + 17, 0, 0, 18, 18, 18, 18);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+
+        guiGraphics.drawString(this.font, this.title, 8, 6, 0x404040, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 48, this.imageHeight - 92, 0x404040, false);
+    }
+
+    @Override
+    protected void renderTooltip(GuiGraphics guiGraphics, int x, int y) {
+        if (this.menu.getCarried().isEmpty() && this.hoveredSlot != null && this.hoveredSlot.hasItem()) {
+            guiGraphics.renderTooltip(this.font, this.hoveredSlot.getItem(), x, y);
+        }
+    }
+}
