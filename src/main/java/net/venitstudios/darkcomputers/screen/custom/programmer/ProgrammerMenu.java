@@ -1,41 +1,38 @@
 package net.venitstudios.darkcomputers.screen.custom.programmer;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.inventory.StonecutterMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.venitstudios.darkcomputers.block.ModBlocks;
-import net.venitstudios.darkcomputers.block.entity.custom.ComputerBlockEntity;
-import net.venitstudios.darkcomputers.block.entity.custom.ProgrammerBlockEntity;
-import net.venitstudios.darkcomputers.item.FilteredSlot;
+import net.venitstudios.darkcomputers.container.FilteredSlot;
+import net.venitstudios.darkcomputers.container.custom.ProgrammerContainer;
 import net.venitstudios.darkcomputers.item.ModItems;
 import net.venitstudios.darkcomputers.screen.ModMenuTypes;
 
 public class ProgrammerMenu extends AbstractContainerMenu  {
-    public final ProgrammerBlockEntity blockEntity;
     private final Level level;
     public ProgrammerMenu(int containerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(containerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()));
+        this(containerId, inv, inv.player.getUseItem().copy());
     }
 
 
-    public ProgrammerMenu(int containerId, Inventory inv, BlockEntity blockEntity) {
+    public ProgrammerMenu(int containerId, Inventory inv, ItemStack stack) {
         super(ModMenuTypes.PROGRAMMER_MENU.get(), containerId);
-        this.blockEntity = ((ProgrammerBlockEntity)blockEntity);
-        this.level = inv.player.level();
 
+        this.level = inv.player.level();
 
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
 
-        this.addSlot(new FilteredSlot(this.blockEntity.inventory, 0, 20, 33, ModItems.FLOPPY_DISK.get(), 1));
-        this.addSlot(new FilteredSlot(this.blockEntity.inventory, 1, 143, 33, ModItems.EEPROM.get(), 1));
+        ProgrammerContainer container = new ProgrammerContainer(stack);
+
+        this.addSlot(new FilteredSlot(container, 0, 20, 33, ModItems.EEPROM.get(), 1));
+        this.addSlot(new FilteredSlot(container, 1, 143, 33, ModItems.FLOPPY_DISK.get(), 1));
     }
 
     private void addPlayerInventory(Inventory playerInventory) {
@@ -106,7 +103,6 @@ public class ProgrammerMenu extends AbstractContainerMenu  {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
-                player, ModBlocks.PROGRAMMER_BLOCK.get());
+        return player.isHolding(ModItems.EEPROM_PROGRAMMER.get());
     }
 }

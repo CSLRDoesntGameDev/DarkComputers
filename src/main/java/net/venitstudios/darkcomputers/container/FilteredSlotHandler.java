@@ -1,14 +1,14 @@
-package net.venitstudios.darkcomputers.item;
+package net.venitstudios.darkcomputers.container;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
 
-public class FilteredSlot extends SlotItemHandler {
+public class FilteredSlotHandler extends SlotItemHandler {
     public final Item allowedItem;
     public final int maxCount;
-    public FilteredSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition, Item allowedItem, int maxCount) {
+    public FilteredSlotHandler(IItemHandler itemHandler, int index, int xPosition, int yPosition, Item allowedItem, int maxCount) {
         super(itemHandler, index, xPosition, yPosition);
         this.allowedItem = allowedItem;
         this.maxCount = maxCount;

@@ -28,6 +28,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
     protected void generate() {
         dropSelf(ModBlocks.TERMINAL_BLOCK.get());
         dropSelf(ModBlocks.COMPUTER_BLOCK.get());
+        dropSelf(ModBlocks.TERMINAL_BLOCK.get());
         // dropSelf(ModBlocks.MAGIC_BLOCK.get());
     }
 

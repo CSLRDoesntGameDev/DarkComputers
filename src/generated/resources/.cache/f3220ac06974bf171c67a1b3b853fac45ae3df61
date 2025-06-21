@@ -1,4 +1,5 @@
-// 1.21.1	2025-06-14T20:33:16.148949484	Item Models: darkcomputers
+// 1.21.1	2025-06-20T19:34:10.423191176	Item Models: darkcomputers
 feded8fdd68322ea89bd826eaa598ccd8a393931 assets/darkcomputers/models/item/cpu_a.json
 272c629cf083750e35e24d0f08e2e9745fafce94 assets/darkcomputers/models/item/eeprom_a.json
+7a0188fa98a65f75712635184126f8217a9c3bf0 assets/darkcomputers/models/item/eeprom_programmer.json
 9c0954ae199103e7141f8a35d1bd2f4ba683f337 assets/darkcomputers/models/item/floppy_a.json

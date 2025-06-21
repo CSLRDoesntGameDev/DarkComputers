@@ -11,7 +11,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.venitstudios.darkcomputers.block.ModBlocks;
 import net.venitstudios.darkcomputers.block.entity.custom.ComputerBlockEntity;
-import net.venitstudios.darkcomputers.item.FilteredSlot;
+import net.venitstudios.darkcomputers.container.FilteredSlot;
+import net.venitstudios.darkcomputers.container.FilteredSlotHandler;
 import net.venitstudios.darkcomputers.item.ModItems;
 import net.venitstudios.darkcomputers.screen.ModMenuTypes;
 
@@ -30,7 +31,7 @@ public class ComputerMenu extends AbstractContainerMenu  {
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
 
-        this.addSlot(new FilteredSlot(this.blockEntity.inventory, 0, -18, 18, ModItems.FLOPPY_DISK.get(), 1));
+        this.addSlot(new FilteredSlotHandler(this.blockEntity.inventory, 0, -18, 18, ModItems.FLOPPY_DISK.get(), 1));
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

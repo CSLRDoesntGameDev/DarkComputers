@@ -10,7 +10,6 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.venitstudios.darkcomputers.DarkComputers;
 import net.venitstudios.darkcomputers.block.custom.ComputerBlock;
-import net.venitstudios.darkcomputers.block.custom.ProgrammerBlock;
 import net.venitstudios.darkcomputers.block.custom.TerminalBlock;
 import net.venitstudios.darkcomputers.item.ModItems;
 
@@ -25,8 +24,6 @@ public class ModBlocks {
     public static final DeferredBlock<Block> COMPUTER_BLOCK = registerBlock("computer_block",
             () -> new ComputerBlock(BlockBehaviour.Properties.of().strength(3f).requiresCorrectToolForDrops().sound(SoundType.STONE)));
 
-    public static final DeferredBlock<Block> PROGRAMMER_BLOCK = registerBlock("programmer_block",
-            () -> new ProgrammerBlock(BlockBehaviour.Properties.of().strength(3f).requiresCorrectToolForDrops().sound(SoundType.STONE)));
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {
         DeferredBlock<T> toReturn = BLOCKS.register(name, block);

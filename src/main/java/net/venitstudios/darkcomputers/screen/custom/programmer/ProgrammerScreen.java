@@ -26,7 +26,7 @@ public class ProgrammerScreen extends AbstractContainerScreen<ProgrammerMenu> {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        PacketDistributor.sendToServer(new ModPayloads.ioKeyAction(programmerMenu.blockEntity.getBlockPos(), keyCode, modifiers, true));
+
         if (Minecraft.getInstance().options.keyInventory.matches(keyCode, scanCode)) {
             return true;
         }
@@ -35,7 +35,7 @@ public class ProgrammerScreen extends AbstractContainerScreen<ProgrammerMenu> {
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        PacketDistributor.sendToServer(new ModPayloads.ioKeyAction(programmerMenu.blockEntity.getBlockPos(), keyCode, modifiers, false));
+
         if (Minecraft.getInstance().options.keyInventory.matches(keyCode, scanCode)) {
             return true;
         }

@@ -15,17 +15,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
     @Override
     protected void registerStatesAndModels() {
 
-
         // imported from blockbench
 //        blockWithMultipleTextures(ModBlocks.TERMINAL_BLOCK,
 //                "block/opencomputers/terminal_top", "block/opencomputers/terminal_side",
 //                "block/opencomputers/terminal_front", "block/opencomputers/terminal_side",
 //                "block/opencomputers/terminal_side", "block/opencomputers/terminal_side");
 
-        blockWithMultipleTextures(ModBlocks.COMPUTER_BLOCK,
-                "block/opencomputers/case_top", "block/opencomputers/case_side",
-                "block/opencomputers/case_front", "block/opencomputers/case_side",
-                "block/opencomputers/case_side", "block/opencomputers/case_side");
+//        blockWithMultipleTextures(ModBlocks.COMPUTER_BLOCK,
+//                "block/opencomputers/case_top", "block/opencomputers/case_side",
+//                "block/opencomputers/case_front", "block/opencomputers/case_side",
+//                "block/opencomputers/case_side", "block/opencomputers/case_side");
     }
 
 

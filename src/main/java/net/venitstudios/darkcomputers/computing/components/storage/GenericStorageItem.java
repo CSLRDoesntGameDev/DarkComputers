@@ -30,7 +30,7 @@ public class GenericStorageItem extends Item {
     public static void ensurePath(ItemStack stack) {
         if (!checkDirectory(stack)) {
             boolean created = new File(getStoragePath(stack)).mkdirs();
-            DarkComputers.LOGGER.info("made file? " + created);
+//            DarkComputers.LOGGER.info("made file? " + created);
         }
     }
     public static File[] getFilesAt(ItemStack stack) {

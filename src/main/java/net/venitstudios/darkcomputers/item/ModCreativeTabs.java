@@ -24,12 +24,12 @@ public class ModCreativeTabs {
                         output.accept(ModItems.CPU_BASE);
                         output.accept(ModItems.FLOPPY_DISK);
                         output.accept(ModItems.EEPROM);
+                        output.accept(ModItems.EEPROM_PROGRAMMER);
 
                         // blocks
 
                         output.accept(ModBlocks.TERMINAL_BLOCK);
                         output.accept(ModBlocks.COMPUTER_BLOCK);
-                        output.accept(ModBlocks.PROGRAMMER_BLOCK);
                     })
 
                     .build());
