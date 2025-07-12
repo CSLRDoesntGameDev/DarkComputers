@@ -31,7 +31,7 @@ public class ComputerMenu extends AbstractContainerMenu  {
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
 
-        this.addSlot(new FilteredSlotHandler(this.blockEntity.inventory, 0, -18, 18, ModItems.FLOPPY_DISK.get(), 1));
+        this.addSlot(new FilteredSlotHandler(this.blockEntity.inventory, 0, -18, 18, ModItems.EEPROM.get(), 1));
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

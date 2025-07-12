@@ -15,7 +15,7 @@ import net.venitstudios.darkcomputers.network.ModPayloads;
 public class ComputerScreen extends AbstractContainerScreen<ComputerMenu> {
 
     private static final ResourceLocation GUI_TEXTURE = ResourceLocation.fromNamespaceAndPath(DarkComputers.MOD_ID, "textures/gui/expanded_background.png");
-    private static final ResourceLocation SLOT_TEXTURE = ResourceLocation.fromNamespaceAndPath(DarkComputers.MOD_ID, "textures/gui/vanilla/gui_slot.png");
+    private static final ResourceLocation SLOT_TEXTURE = ResourceLocation.fromNamespaceAndPath(DarkComputers.MOD_ID, "textures/gui/slot/rom_slot.png");
     private static final ResourceLocation TAB_TEXTURE = ResourceLocation.fromNamespaceAndPath(DarkComputers.MOD_ID, "textures/gui/vanilla/tab_left_top.png");
     private ComputerMenu cdm;
     public ComputerScreen(ComputerMenu menu, Inventory playerInventory, Component title) {
@@ -47,20 +47,11 @@ public class ComputerScreen extends AbstractContainerScreen<ComputerMenu> {
     protected void init() {
         super.init();
 
-        this.addRenderableWidget(Button.builder(Component.literal("CPU Cycle"), (button) -> {
-            ProcessorDC16 cpu = cdm.blockEntity.bus.processor;
-            cpu.clockCycle();
-        })
-        .pos(this.leftPos + this.imageWidth + 64, this.topPos + 32)
-        .size(64, 32)
-        .build()
-        );
-
         this.addRenderableWidget(Button.builder(Component.literal("CPU Reset"), (button) -> {
                             PacketDistributor.sendToServer(new ModPayloads.cpuResetReq(cdm.blockEntity.getBlockPos()));
                             this.minecraft.screen.setFocused(null);
                         })
-                        .pos(this.leftPos + this.imageWidth + 64, this.topPos + 64)
+                        .pos(this.leftPos + this.imageWidth + 64, this.topPos + 65)
                         .size(64, 32)
                         .build()
         );

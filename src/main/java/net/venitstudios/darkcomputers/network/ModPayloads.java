@@ -1,11 +1,19 @@
 package net.venitstudios.darkcomputers.network;
 
+import com.google.common.collect.BoundType;
+import com.mojang.authlib.minecraft.client.MinecraftClient;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.ChatType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.OutgoingChatMessage;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.api.distmarker.Dist;
@@ -17,9 +25,19 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.venitstudios.darkcomputers.DarkComputers;
 import net.venitstudios.darkcomputers.block.entity.custom.ComputerBlockEntity;
 import net.venitstudios.darkcomputers.block.entity.custom.TerminalBlockEntity;
+import net.venitstudios.darkcomputers.computing.compiler.CompilerDC16;
+import net.venitstudios.darkcomputers.computing.components.storage.GenericStorageItem;
+import net.venitstudios.darkcomputers.container.custom.ProgrammerContainer;
+import net.venitstudios.darkcomputers.item.ModItems;
+import net.venitstudios.darkcomputers.item.custom.EepromProgrammer;
 import net.venitstudios.darkcomputers.screen.custom.terminal.TerminalScreen;
+import org.openjdk.nashorn.internal.codegen.Compiler;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 
 public class ModPayloads {
 
@@ -38,6 +56,7 @@ public class ModPayloads {
                 ByteBufCodecs.fromCodec(BlockPos.CODEC), cpuResetReq::blockPos, cpuResetReq::new);
         @Override  public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
+
     public record ioKeyAction(BlockPos blockPos, int keyCode, int modifiers, boolean pressed) implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<ioKeyAction> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(
                 DarkComputers.MOD_ID, "server_io_key_press"));
@@ -58,6 +77,7 @@ public class ModPayloads {
         @Override  public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
+
     public record fileStatusUpdate(BlockPos blockPos, String fileList, String currentFile, boolean editingFile, ItemStack itemStack) implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<fileStatusUpdate> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(
                 DarkComputers.MOD_ID, "server_update_terminal_file_status"));
@@ -71,6 +91,7 @@ public class ModPayloads {
         @Override  public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
+
     public record terminalFileContentUpdate(BlockPos blockPos, byte[] content) implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<terminalFileContentUpdate> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(
                 DarkComputers.MOD_ID, "server_update_terminal_file_content"));
@@ -80,6 +101,7 @@ public class ModPayloads {
                 terminalFileContentUpdate::new);
         @Override  public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
+
     
     public record terminalCursorUpdate(BlockPos blockPos, int curCol, int curRow, int curRowOffset, int curColOffset) implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<terminalCursorUpdate> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(
@@ -93,6 +115,18 @@ public class ModPayloads {
                 terminalCursorUpdate::new);
         @Override  public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
+
+
+
+    public record programmerFlashEeprom(String fileName) implements CustomPacketPayload {
+        public static final CustomPacketPayload.Type<programmerFlashEeprom> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(
+                DarkComputers.MOD_ID, "server_flash_eeprom"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, programmerFlashEeprom> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, programmerFlashEeprom::fileName,
+                programmerFlashEeprom::new);
+        @Override  public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
     @SubscribeEvent // https://docs.neoforged.net/docs/1.21.1/networking/payload
     public static void registerPayloads(final RegisterPayloadHandlersEvent event) {
         // Sets the current network version
@@ -140,6 +174,12 @@ public class ModPayloads {
                 ModPayloads::serverIOCharTyped
         );
 
+
+        registrar.playToServer(
+                programmerFlashEeprom.TYPE,
+                programmerFlashEeprom.STREAM_CODEC,
+                ModPayloads::serverProgrammerEepromFlash
+        );
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -155,10 +195,14 @@ public class ModPayloads {
 
     @OnlyIn(Dist.CLIENT)
     private static void clientTermFileUpdate(final fileStatusUpdate packet, final IPayloadContext context) {
+
         BlockEntity blockEntity = context.player().level().getBlockEntity(packet.blockPos);
+        ItemStack itemInPrimary = context.player().getMainHandItem();
+
         if (blockEntity instanceof TerminalBlockEntity terminal) {
             if (terminal.editor.currentScreen instanceof TerminalScreen) {
                 terminal.editor.currentScreen.files = packet.fileList.split(",");
+                terminal.editor.currentScreen.files = Arrays.stream(terminal.editor.currentScreen.files).sorted().toArray(String[]::new);
                 terminal.storageStack = packet.itemStack;
                 terminal.editingFile = packet.editingFile;
                 terminal.editor.currentFileName = packet.currentFile;
@@ -181,9 +225,7 @@ public class ModPayloads {
                 terminal.editor.curRowOffset = packet.curRowOffset;
 
             }
-
         }
-
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -212,4 +254,42 @@ public class ModPayloads {
         if (blockEntity instanceof ComputerBlockEntity computer)  computer.bus.updateKeyState(packet.keyCode, packet.modifiers, packet.pressed);
         if (blockEntity instanceof TerminalBlockEntity terminal)  terminal.editor.keyPressed(packet.keyCode, 0, packet.modifiers);
     }
+
+    private static void serverProgrammerEepromFlash(final programmerFlashEeprom packet, final IPayloadContext context) {
+        if (!(packet.fileName.isBlank())) {
+
+            ServerPlayer player = (ServerPlayer) context.player();
+            ItemStack mainHandItem = player.getMainHandItem();
+
+            if (mainHandItem.getItem().equals(ModItems.EEPROM_PROGRAMMER.get())) {
+                ProgrammerContainer container = new ProgrammerContainer(mainHandItem);
+
+                ItemStack storageSource = container.getItem(0);
+                ItemStack storageDestination = container.getItem(1);
+
+                GenericStorageItem.ensurePath(storageSource);
+                GenericStorageItem.ensurePath(storageDestination);
+
+                Path sourcePath = Path.of(GenericStorageItem.getStoragePath(storageSource));
+                Path destinationPath = Path.of(GenericStorageItem.getStoragePath(storageDestination));
+                Path sourceFile = Path.of(sourcePath + "/" + packet.fileName);
+
+                if (Files.exists(sourceFile)) {
+
+                    CompilerDC16 assembler = new CompilerDC16();
+
+                    short[] data = assembler.assembleFile(String.valueOf(sourceFile),destinationPath + "/eeprom.bin");
+
+                    if (data.length > 0) {
+                        context.player().sendSystemMessage(Component.literal(sourceFile.getFileName() + " Successfully Flashed to EEPROM"));
+                    } else {
+                        context.player().sendSystemMessage(Component.literal("EEPROM Failed to Flash: Assembler Fault"));
+                    }
+                }
+            }
+
+        }
+
+    }
+
 }

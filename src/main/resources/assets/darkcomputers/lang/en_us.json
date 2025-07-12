@@ -1,7 +1,10 @@
 {
+  "creative.darkcomputers.main_tab": "DarkComputers",
+
   "item.darkcomputers.cpu_a": "Central Processing Unit (CPU)",
   "item.darkcomputers.floppy_a": "Floppy Disk",
-  "creative.darkcomputers.main_tab": "DarkComputers",
+  "item.darkcomputers.eeprom_a": "EEPROM",
+  "item.darkcomputers.eeprom_programmer": "EEPROM Flasher",
 
   "block.darkcomputers.terminal_block": "Terminal",
 
@@ -9,5 +12,7 @@
   "tooltip_alt.darkcomputers.terminal_block": "Used for writing text.",
 
   "gui.darkcomputers.terminal.request_item": "<- Please Provide a Floppy Disk.",
-  "gui.darkcomputers.terminal.request_selection": "Select a File to Edit (^n to make a new file)"
+  "gui.darkcomputers.terminal.request_selection": "Select a File to Edit (^n to make a new file)",
+
+  "gui.eeprom_program": "Flash"
 }

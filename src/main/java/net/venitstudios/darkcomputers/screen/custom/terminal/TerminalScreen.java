@@ -1,5 +1,6 @@
 package net.venitstudios.darkcomputers.screen.custom.terminal;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -13,11 +14,14 @@ import net.venitstudios.darkcomputers.block.entity.custom.TerminalBlockEntity;
 import net.venitstudios.darkcomputers.computing.components.terminal.TextEditor;
 import net.venitstudios.darkcomputers.network.ModPayloads;
 
+import java.awt.im.InputContext;
+import java.util.Arrays;
+
 public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private static final ResourceLocation GUI_TEXTURE = ResourceLocation.fromNamespaceAndPath(
             DarkComputers.MOD_ID, "textures/gui/expanded_background.png");
     private static final ResourceLocation SLOT_TEXTURE = ResourceLocation.fromNamespaceAndPath(
-            DarkComputers.MOD_ID, "textures/gui/programmer/disk_slot.png");
+            DarkComputers.MOD_ID, "textures/gui/slot/disk_slot.png");
     private static final ResourceLocation TAB_TEXTURE = ResourceLocation.fromNamespaceAndPath(
             DarkComputers.MOD_ID, "textures/gui/vanilla/tab_left_top.png");
     private final TerminalMenu terminalMenu;
@@ -32,7 +36,46 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        PacketDistributor.sendToServer(new ModPayloads.ioKeyAction(terminalMenu.blockEntity.getBlockPos(), keyCode, modifiers, true));
+        PacketDistributor.sendToServer(
+                new ModPayloads.ioKeyAction(
+                        terminalMenu.blockEntity.getBlockPos(),
+                        keyCode,
+                        modifiers,
+                        true)
+        );
+
+        if (keyCode == InputConstants.KEY_V && modifiers == InputConstants.MOD_CONTROL) {
+            String clipboardContents = Minecraft.getInstance().keyboardHandler.getClipboard();
+            for (char ch : clipboardContents.toCharArray()) {
+                if (ch == '\n') {
+
+                    PacketDistributor.sendToServer(
+                            new ModPayloads.ioKeyAction(
+                                    terminalMenu.blockEntity.getBlockPos(),
+                                    InputConstants.KEY_RETURN,
+                                    modifiers,
+                                    true)
+                    );
+
+                } else {
+                    PacketDistributor.sendToServer(
+                            new ModPayloads.ioCharType(
+                                    terminalMenu.blockEntity.getBlockPos(),
+                                    ch,
+                                    modifiers)
+                    );
+                }
+            }
+
+            PacketDistributor.sendToServer(
+                    new ModPayloads.ioKeyAction(
+                    terminalMenu.blockEntity.getBlockPos(),
+                    InputConstants.KEY_RETURN,
+                    modifiers,
+                    true)
+            );
+        }
+
         if (Minecraft.getInstance().options.keyInventory.matches(keyCode, scanCode)) {
             return true;
         }
@@ -97,20 +140,23 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
                 editor.curRow = Math.max(0, Math.min(files.length - 1, editor.curRow));
 
                 int cursorColor = 0xFFAB33AB;
+
                 guiGraphics.drawString(this.font, ">",
                         x1 + 6, y1 + 16 + (editor.curRow * 8) - (editor.curRowOffset * 8), 0xFF3DFF3D, false);
 
                 for (int r = 2; r < rowCount; r++) {
-                    int cr = editor.curRowOffset + (r - 2); // current column
+                    int cr = editor.curRowOffset + (r - 2);
                     if (cr < files.length) {
 
                         String fileName = files[cr];
                         guiGraphics.drawString(this.font, fileName, x1 + 16, y1 + (r * 8), 0xFF3DFF3D, false);
 
                     }
+
                 }
 
             }
+
         }
 
         if (entity.editingFile) {

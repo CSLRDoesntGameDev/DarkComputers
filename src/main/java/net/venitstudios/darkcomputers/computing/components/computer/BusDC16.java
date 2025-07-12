@@ -1,13 +1,16 @@
 package net.venitstudios.darkcomputers.computing.components.computer;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import net.venitstudios.darkcomputers.DarkComputers;
-import net.venitstudios.darkcomputers.computing.compiler.CompilerDC16;
+import net.venitstudios.darkcomputers.block.entity.custom.ComputerBlockEntity;
 import net.venitstudios.darkcomputers.computing.components.processor.ProcessorDC16;
+import net.venitstudios.darkcomputers.computing.components.storage.GenericStorageItem;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,6 +18,7 @@ import java.util.List;
 public class BusDC16 {
     public ProcessorDC16 processor;
     public DD_DC16 displayDriver;
+    public ComputerBlockEntity computerBlockEntity;
     public short[] memory;
     public int cyclesPerTick = 64;
     public int cyclesRan = 0;
@@ -24,23 +28,40 @@ public class BusDC16 {
     public static final int KEYBOARD_KEY_MOD_ADDRESS = 0x7202;
     public static final int KEYBOARD_KEY_PRB_ADDRESS = 0x7203;
     public static final int KEYBOARD_KEY_LEN_ADDRESS = 0x7204;
-    public BusDC16() {
+    public BusDC16(ComputerBlockEntity computerBlockEntity) {
         this.processor = new ProcessorDC16();
         this.processor.bus = this;
         this.displayDriver = new DD_DC16();
         this.displayDriver.bus = this;
         this.memory = new short[1024 * 64];
+        this.computerBlockEntity = computerBlockEntity;
+    }
+
+
+    public void eepromToMemory(ItemStack itemStack) {
+        GenericStorageItem.ensurePath(itemStack);
+        byte[] data = null;
+        try {
+            data = Files.readAllBytes(Path.of(GenericStorageItem.getStoragePath(itemStack) + "/eeprom.bin"));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+        short[] shorts = new short[data.length/2];
+
+        for (int i = 0; i < data.length; i += 2) {
+            short resultShort = (short) (((data[i] & 0xFF) << 8) | (data[i+1] & 0xFF));
+            shorts[i/2] = resultShort;
+        }
+
+        System.arraycopy(shorts, 0, this.memory, 0, shorts.length);
     }
 
     public void resetBus() {
         this.memory = new short[1024 * 64];
         this.cyclesRan = 0;
         this.displayDriver.resetBuffer();
-        CompilerDC16 compiler = new CompilerDC16();
-
-        short[] data = compiler.assembleFile("/assets/darkcomputers/test_progs/dc16/test.dcasm");
-        System.out.println("Compiled program: " + Arrays.toString(data));
-        System.arraycopy(data, 0, this.memory, 0, data.length);
+        eepromToMemory(computerBlockEntity.storageStack);
     }
 
 

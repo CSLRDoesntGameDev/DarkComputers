@@ -2,30 +2,58 @@ package net.venitstudios.darkcomputers.screen.custom.programmer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.venitstudios.darkcomputers.DarkComputers;
+import net.venitstudios.darkcomputers.component.ModDataComponents;
+import net.venitstudios.darkcomputers.computing.components.processor.ProcessorDC16;
+import net.venitstudios.darkcomputers.container.custom.ProgrammerContainer;
+import net.venitstudios.darkcomputers.item.ModItems;
 import net.venitstudios.darkcomputers.network.ModPayloads;
+
+import java.util.Arrays;
 
 public class ProgrammerScreen extends AbstractContainerScreen<ProgrammerMenu> {
 
     private static final ResourceLocation GUI_TEXTURE = ResourceLocation.fromNamespaceAndPath(
             DarkComputers.MOD_ID, "textures/gui/programmer/programmer_background.png");
-    private static final ResourceLocation FLOPPY_SLOT_TEXTURE = ResourceLocation.fromNamespaceAndPath(
-            DarkComputers.MOD_ID, "textures/gui/programmer/disk_slot.png");
-    private static final ResourceLocation EEPROM_SLOT_TEXTURE = ResourceLocation.fromNamespaceAndPath(
-            DarkComputers.MOD_ID, "textures/gui/programmer/rom_slot.png");
+    private static final ResourceLocation UP_ARROW_TEXTURE = ResourceLocation.fromNamespaceAndPath(
+            DarkComputers.MOD_ID, "textures/gui/vanilla/up_arrow.png");
+    private static final ResourceLocation DOWN_ARROW_TEXTURE = ResourceLocation.fromNamespaceAndPath(
+            DarkComputers.MOD_ID, "textures/gui/vanilla/down_arrow.png");
+
     private ProgrammerMenu programmerMenu;
+    private Inventory playerInventory;
+
+    int fileOffset = 0;
+
     public ProgrammerScreen(ProgrammerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.programmerMenu = menu;
+        this.playerInventory = playerInventory;
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        switch (keyCode) {
+
+            case 264: {
+                fileOffset += 1;
+                break;
+            }
+
+            case 265: {
+                fileOffset -= 1;
+                break;
+            }
+
+        }
 
         if (Minecraft.getInstance().options.keyInventory.matches(keyCode, scanCode)) {
             return true;
@@ -48,14 +76,6 @@ public class ProgrammerScreen extends AbstractContainerScreen<ProgrammerMenu> {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-
-        renderTooltip(guiGraphics, mouseX, mouseY);
-
-    }
-
-    @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         int x = this.leftPos;
         int y = this.topPos;
@@ -63,10 +83,95 @@ public class ProgrammerScreen extends AbstractContainerScreen<ProgrammerMenu> {
     }
 
     @Override
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        Player player = playerInventory.player;
+        ItemStack inventoryStack = ItemStack.EMPTY;
+
+        if (player.getMainHandItem().getItem().equals(ModItems.EEPROM_PROGRAMMER.get())) {
+            inventoryStack = player.getMainHandItem();
+        } else if (player.getOffhandItem().getItem().equals(ModItems.EEPROM_PROGRAMMER.get())) {
+            inventoryStack = player.getOffhandItem();
+        }
+
+        String[] files = inventoryStack.getOrDefault(ModDataComponents.GENERIC_STORAGE_FILES, "").split(",");
+
+        if (files.length > 0) {
+            files = Arrays.stream(files).sorted().toArray(String[]::new);
+
+            guiGraphics.drawString(this.font, ">", this.leftPos + 55, this.topPos + 18, 0xFF3DFF3D, false);
+
+            for (int i = 0; i < files.length; i++) {
+                fileOffset = Math.clamp(fileOffset, 0, files.length-1);
+
+                if (i + fileOffset < files.length) {
+                    String text = files[i+fileOffset];
+
+                    int color = i == 0 ? 0xFF3DFF3D : 0xFF3D3D3D;
+
+                    guiGraphics.drawString(this.font, text.substring(0, Math.min(text.length(), 10)), this.leftPos + 55 + 8, this.topPos + 18 + (i * 8), color, false);
+
+
+                }
+            }
+        }
+
+        // IDEA wouldn't stop giving me an error unless i had this here.
+        String[] finalFiles = files.clone();
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.eeprom_program"), (button) -> {
+
+                ItemStack floppyStorage = programmerMenu.getSlot(programmerMenu.getItems().size() - 2).getItem();
+                ItemStack eepromStorage = programmerMenu.getSlot(programmerMenu.getItems().size() - 1).getItem();
+//                DarkComputers.LOGGER.info(eepromStorage + " " + floppyStorage + " " + finalFiles.length + " " + fileOffset);
+
+                if (fileOffset < finalFiles.length) {
+                    String fileName = finalFiles[fileOffset];
+                    ModPayloads.programmerFlashEeprom eepromPacket = new ModPayloads.programmerFlashEeprom(
+                            fileName
+                    );
+
+                    PacketDistributor.sendToServer(eepromPacket);
+                }
+
+            })
+            .pos(this.leftPos + 68, this.topPos + 53)
+            .size(43, 16)
+            .build()
+        );
+
+        this.addRenderableWidget(Button.builder(Component.literal(""), (button) -> {
+
+            fileOffset += 1;
+
+            })
+            .pos(this.leftPos + 52, this.topPos + 53)
+            .size(16, 16)
+            .build()
+        );
+
+        this.addRenderableWidget(Button.builder(Component.literal(""), (button) -> {
+
+            fileOffset -= 1;
+
+            })
+            .pos(this.leftPos + 111, this.topPos + 53)
+            .size(16, 16)
+            .build()
+        );
+
+        guiGraphics.blit(DOWN_ARROW_TEXTURE, this.leftPos + 52, this.topPos + 53, 0, 0,16, 16, 16, 16);
+        guiGraphics.blit(UP_ARROW_TEXTURE, this.leftPos + 111, this.topPos + 53, 0, 0, 16, 16, 16, 16);
+
+        renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+
+
+    @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
 
-        guiGraphics.drawString(this.font, this.title, 8, 6, 0x404040, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 48, this.imageHeight - 92, 0x404040, false);
+        guiGraphics.drawString(this.font, Component.translatable("item.darkcomputers.eeprom_programmer"), 8, 6, 0x404040, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 92, 0x404040, false);
     }
 
     @Override

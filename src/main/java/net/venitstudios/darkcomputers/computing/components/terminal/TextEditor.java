@@ -1,6 +1,7 @@
 package net.venitstudios.darkcomputers.computing.components.terminal;
 
 import net.minecraft.world.item.ItemStack;
+import net.venitstudios.darkcomputers.DarkComputers;
 import net.venitstudios.darkcomputers.block.entity.custom.TerminalBlockEntity;
 import net.venitstudios.darkcomputers.computing.components.storage.GenericStorageItem;
 import net.venitstudios.darkcomputers.screen.custom.terminal.TerminalScreen;
@@ -17,7 +18,6 @@ public class TextEditor {
     public String[] fileContents = new String[8];
     // current column cursor is on
     public int curCol = 0;
-
     // current row cursor is on
     public int curRow = 0;
     public int curRowOffset = 0;
@@ -119,7 +119,6 @@ public class TextEditor {
                 String line = fileContents[curRow];
                 if (line == null) line = "";
                 curCol = Math.min(curCol, line.length());
-                if (line == null) line = "";
                 if (curCol <= line.length()) {
                     // Insert character at cursor
                     String modified = line.substring(0, curCol) + chrstr + line.substring(curCol);
@@ -154,10 +153,25 @@ public class TextEditor {
                     }
                     break;
                 case 264: // down arrow
+                    if (curRow >= fileContents.length) {
+                        fileContents = Arrays.copyOf(fileContents, curRow);
+                        for (int i = 0; i < curRow; i++) {
+                            if (fileContents[i] == null) {
+                                fileContents[i] = "";
+                            }
+                        }
+                        //                        DarkComputers.LOGGER.info("CREATED NEW LINE! " + fileContents.length + " " + curRow);
+                    }
+
                     if (curRow + 2 > fileContents.length) {
                         fileContents = Arrays.copyOf(fileContents, fileContents.length + 1);
-                        fileContents[fileContents.length - 1] = "";
+                        for (int i = 0; i < fileContents.length; i++) {
+                            if (fileContents[i] == null) {
+                                fileContents[i] = "";
+                            }
+                        }
                     }
+
                     curRow += 1;
                     if (curRow < fileContents.length) {
                         line = fileContents[curRow];
@@ -197,8 +211,10 @@ public class TextEditor {
                         }
                     } else {
                         File[] files = GenericStorageItem.getFilesAt(blockEntity.storageStack);
+                        files = Arrays.stream(files).sorted().toArray(File[]::new);
                         if (this.curRow >= 0 && this.curRow < files.length) {
                             File selectedFile = files[this.curRow];
+//                            DarkComputers.LOGGER.info("Editor List: " + Arrays.toString(files));
                             loadFile(selectedFile);
                             curRow = 0;
                         }
@@ -206,27 +222,32 @@ public class TextEditor {
 
                     break;
                 case 261: // delete
-                    line = fileContents[curRow];
-                    if (line == null) line = "";
-                    if (curCol < line.length()) {
-                        String modified = line.substring(0, curCol) + line.substring(curCol + 1);
-                        fileContents[curRow] = modified;
+                    if (curRow < fileContents.length) {
+
+                        line = fileContents[curRow];
+                        if (line == null) line = "";
+                        if (curCol < line.length()) {
+                            String modified = line.substring(0, curCol) + line.substring(curCol + 1);
+                            fileContents[curRow] = modified;
+                        }
                     }
                     break;
                 case 259: // backspace
-                    line = fileContents[curRow];
-                    if (line == null) line = "";
-                    if (curCol > 0 && curCol <= line.length()) {
-                        String modified = line.substring(0, curCol - 1) + line.substring(curCol);
-                        fileContents[curRow] = modified;
-                        curCol -= 1;
-                    }
-                    if (curCol == 0 && curRow > 0) {
-                        curRow -= 1;
+                    if (curRow < fileContents.length) {
                         line = fileContents[curRow];
-                        curCol = line.length();
+                        if (line == null) line = "";
+                        if (curCol > 0 && curCol <= line.length()) {
+                            String modified = line.substring(0, curCol - 1) + line.substring(curCol);
+                            fileContents[curRow] = modified;
+                            curCol -= 1;
+                        }
+                        if (curCol == 0 && curRow > 0) {
+                            curRow -= 1;
+                            line = fileContents[curRow];
+                            curCol = line.length();
+                        }
+                        break;
                     }
-                    break;
             }
         }
     }

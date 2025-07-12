@@ -41,13 +41,16 @@ public class CompilerDC16 {
                     }
                 }
             } catch (IOException e) { e.printStackTrace(); }
+        } else {
+            DarkComputers.LOGGER.info("Input Stream is Null - createAssemblyTarget");
         }
+//        DarkComputers.LOGGER.info("Assembly Target Succesfully Created");
     }
 
 
     private short parseOperand(String operand) {
         operand = operand.replace(",", "").trim();
-
+        DarkComputers.LOGGER.info("Parsing " + operand);
         if (operand.startsWith("#")) {
             operand = operand.substring(1);
         }
@@ -69,27 +72,26 @@ public class CompilerDC16 {
             throw new RuntimeException("Invalid operand: " + operand);
         }
     }
-    public short[] assembleFile(String filePath) {
+
+    public short[] assembleFile(String filePath, String outputPath) {
         createAssemblyTarget();
-        String outputPath = DarkComputers.modDataStoragePath + "/" + new File(filePath).getName() + "_bin";
+        DarkComputers.LOGGER.info("Assembling File: " + filePath + " To: " + outputPath);
         collectInformation(filePath);
         System.out.println("Labels: " + labels.toString() + " Variables: " + constants.toString());
 
         List<Short> shortList = new ArrayList<>(); // To store the shorts
 
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(filePath);
-        if (inputStream != null) {
+        try (InputStream inputStream = new FileInputStream(filePath)) {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-                // Use ByteArrayOutputStream to capture data for the short array
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 try (DataOutputStream dos = new DataOutputStream(new FileOutputStream(outputPath));
-                     DataOutputStream arrayDos = new DataOutputStream(byteArrayOutputStream)) { // Also write to array stream
+                     DataOutputStream arrayDos = new DataOutputStream(byteArrayOutputStream)) {
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        line = line.split(";", 2)[0].trim(); // remove comments
+                        line = line.split(";", 2)[0].trim();
 
                         if (!line.isEmpty()) {
-                            String[] lineArgs = line.split("\\s+"); // split on whitespace
+                            String[] lineArgs = line.split("\\s+");
                             String tag = lineArgs[0];
 
                             if (instructions.containsKey(tag)) {
@@ -113,14 +115,13 @@ public class CompilerDC16 {
                                         }
                                     }
 
-                                    result[2 + (i * 2)] = (byte) ((value >> 8) & 0xFF);  // high byte
-                                    result[3 + (i * 2)] = (byte) (value & 0xFF);         // low byte
+                                    result[2 + (i * 2)] = (byte) ((value >> 8) & 0xFF);
+                                    result[3 + (i * 2)] = (byte) (value & 0xFF);
                                 }
-                                dos.write(result); // Write to file
-                                arrayDos.write(result); // Write to the array stream
-                            }
-                            else {
-//                                System.err.println("UNKNOWN OPCODE: " + tag);
+                                dos.write(result);
+                                arrayDos.write(result);
+                            } else {
+                                System.err.println("UNKNOWN OPCODE: " + tag);
                             }
                         }
                     }
@@ -128,14 +129,16 @@ public class CompilerDC16 {
 
                 byte[] rawBytes = byteArrayOutputStream.toByteArray();
                 for (int i = 0; i < rawBytes.length; i += 2) {
-                    // Combine two bytes into a short
                     short s = (short) (((rawBytes[i] & 0xFF) << 8) | (rawBytes[i+1] & 0xFF));
                     shortList.add(s);
                 }
 
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+        } catch (FileNotFoundException e) {
+            DarkComputers.LOGGER.info("File not found: " + filePath);
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         short[] resultArray = new short[shortList.size()];
@@ -146,8 +149,8 @@ public class CompilerDC16 {
     }
 
     public void collectInformation(String filePath) {
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(filePath);
-        if (inputStream != null) {
+        // MODIFICATION HERE: Use FileInputStream for the external file
+        try (InputStream inputStream = new FileInputStream(filePath)) { // Use FileInputStream directly
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
                 String line;
 
@@ -157,14 +160,12 @@ public class CompilerDC16 {
                 int currentAddress = 0;
 
                 while ((line = reader.readLine()) != null) {
-                    line = line.split(";", 2)[0].trim(); // remove comments
+                    line = line.split(";", 2)[0].trim();
 
                     if (!line.isEmpty()) {
-                        String[] lineArgs = line.split("\\s+"); // split on whitespace
+                        String[] lineArgs = line.split("\\s+");
 
                         String tag = lineArgs[0];
-
-
 
                         switch (tag) {
                             case (ORIGINATOR_TAG): {
@@ -186,9 +187,12 @@ public class CompilerDC16 {
                     }
 
                 }
-            } catch (IOException e) { e.printStackTrace(); }
+            }
+        } catch (FileNotFoundException e) {
+            DarkComputers.LOGGER.info("File not found for information collection: " + filePath);
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
-
-
 }

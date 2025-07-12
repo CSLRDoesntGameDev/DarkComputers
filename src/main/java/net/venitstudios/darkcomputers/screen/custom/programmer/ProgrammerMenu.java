@@ -13,26 +13,29 @@ import net.venitstudios.darkcomputers.container.FilteredSlot;
 import net.venitstudios.darkcomputers.container.custom.ProgrammerContainer;
 import net.venitstudios.darkcomputers.item.ModItems;
 import net.venitstudios.darkcomputers.screen.ModMenuTypes;
+import org.jetbrains.annotations.NotNull;
 
 public class ProgrammerMenu extends AbstractContainerMenu  {
     private final Level level;
     public ProgrammerMenu(int containerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(containerId, inv, inv.player.getUseItem().copy());
+        this(containerId, inv, inv.player.getMainHandItem());
     }
 
+    public ItemStack stack = ItemStack.EMPTY;
 
     public ProgrammerMenu(int containerId, Inventory inv, ItemStack stack) {
         super(ModMenuTypes.PROGRAMMER_MENU.get(), containerId);
+            this.level = inv.player.level();
+        if (stack.getItem().equals(ModItems.EEPROM_PROGRAMMER.get())) {
+            addPlayerInventory(inv);
+            addPlayerHotbar(inv);
 
-        this.level = inv.player.level();
+            ProgrammerContainer container = new ProgrammerContainer(stack);
+            this.stack = stack;
 
-        addPlayerInventory(inv);
-        addPlayerHotbar(inv);
-
-        ProgrammerContainer container = new ProgrammerContainer(stack);
-
-        this.addSlot(new FilteredSlot(container, 0, 20, 33, ModItems.EEPROM.get(), 1));
-        this.addSlot(new FilteredSlot(container, 1, 143, 33, ModItems.FLOPPY_DISK.get(), 1));
+            this.addSlot(new FilteredSlot(container, 0, 20, 33, ModItems.FLOPPY_DISK.get(), 1));
+            this.addSlot(new FilteredSlot(container, 1, 143, 33, ModItems.EEPROM.get(), 1));
+        }
     }
 
     private void addPlayerInventory(Inventory playerInventory) {
@@ -71,7 +74,7 @@ public class ProgrammerMenu extends AbstractContainerMenu  {
     @Override
     public ItemStack quickMoveStack(Player playerIn, int pIndex) {
         Slot sourceSlot = slots.get(pIndex);
-        if (sourceSlot == null || !sourceSlot.hasItem()) return ItemStack.EMPTY;  //EMPTY_ITEM
+        if (!sourceSlot.hasItem()) return ItemStack.EMPTY;  //EMPTY_ITEM
         ItemStack sourceStack = sourceSlot.getItem();
         ItemStack copyOfSourceStack = sourceStack.copy();
 

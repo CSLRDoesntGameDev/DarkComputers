@@ -24,11 +24,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.venitstudios.darkcomputers.block.entity.custom.ComputerBlockEntity;
 import net.venitstudios.darkcomputers.block.entity.ModBlockEntities;
+import net.venitstudios.darkcomputers.block.entity.custom.TerminalBlockEntity;
 import org.jetbrains.annotations.Nullable;
 
 public class ComputerBlock extends BaseEntityBlock {
@@ -95,7 +97,13 @@ public class ComputerBlock extends BaseEntityBlock {
         return new ComputerBlockEntity(pos, state);
     }
 
-
+    @Override
+    public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos, Player player, boolean willHarvest, FluidState fluid) {
+        if (level.getBlockEntity(pos) instanceof ComputerBlockEntity computerBlockEntity) {
+            computerBlockEntity.dropItems();
+        }
+        return super.onDestroyedByPlayer(state, level, pos, player, willHarvest, fluid);
+    }
 
     // https://docs.neoforged.net/docs/1.21.1/blockentities/
     @SuppressWarnings("unchecked") // Due to generics, an unchecked cast is necessary here.

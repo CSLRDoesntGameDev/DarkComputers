@@ -15,11 +15,13 @@ import java.util.stream.IntStream;
 public class ModDataComponents {
     public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENT_TYPES =
             DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, DarkComputers.MOD_ID);
-
-
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> ITEM_UUID = register("item_uuid",
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> ITEM_UUID = register("storage_item_uuid",
+            builder -> builder.persistent(Codec.STRING));
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> EEPROM_FILE_NAME = register("eeprom_file_name",
             builder -> builder.persistent(Codec.STRING));
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GENERIC_STORAGE_FILES = register("generic_storage_files",
+            builder -> builder.persistent(Codec.STRING));
 
     private static <T>DeferredHolder<DataComponentType<?>, DataComponentType<T>> register(String name, UnaryOperator<DataComponentType.Builder<T>> builderOperator) {
         return DATA_COMPONENT_TYPES.register(name, () -> builderOperator.apply(DataComponentType.builder()).build());

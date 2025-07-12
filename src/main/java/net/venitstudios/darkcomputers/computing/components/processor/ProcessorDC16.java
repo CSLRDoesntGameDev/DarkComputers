@@ -1,6 +1,7 @@
 package net.venitstudios.darkcomputers.computing.components.processor;
 
 import net.minecraft.client.Minecraft;
+import net.venitstudios.darkcomputers.DarkComputers;
 import net.venitstudios.darkcomputers.computing.components.computer.BusDC16;
 
 import java.lang.reflect.InvocationTargetException;
@@ -76,6 +77,7 @@ public class ProcessorDC16 {
         if (bus != null) {
             return bus.read(idx);
         }
+//        DarkComputers.LOGGER.info("Bus is not linked, returning 0");
         return 0;
     }
     public void writeToBus(int idx, int data) {
@@ -90,11 +92,16 @@ public class ProcessorDC16 {
         this.N = false;
         this.C = false;
         this.halted = false;
-        System.out.println("Finished Resetting. " + this.PC + " " + this.SP + " ");
+//        System.out.println("Finished Resetting.");
     }
 
     public void clockCycle() {
-        if (halted ) { return; }
+        if (halted ) {
+//            DarkComputers.LOGGER.info("HALTED");
+            return;
+        }
+
+//        DarkComputers.LOGGER.info("CLOCK");
         bus.cyclesRan += 1;
         int initialPC = PC;
         int opcode = readFromBus(PC);
@@ -108,7 +115,7 @@ public class ProcessorDC16 {
             Instruction instruction = INSTRUCTION_OPCODES[opcodeAddress];
             if ((instruction.opcode & 0b01111111) == (opcode & 0b01111111)) {
                 try {
-//                    System.out.println("Trying " + instruction.tag + " " + opcode + " " + opcodeAddress);
+//                    System.out.println("Trying " + instruction.tag + " " + opcode + " " + opcodeAddress + " " + " at " + PC);
                     Method opcodeMethod = getClass().getMethod(instruction.tag, Instruction.class);
                     opcodeMethod.invoke(this, instruction);
                 } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
@@ -123,6 +130,7 @@ public class ProcessorDC16 {
         } else {
             System.out.println("OPCODE OUT OF BOUNDS: " + opcode + " " + opcodeAddress + " " + Integer.toHexString(bus.memory[PC]));
             halted = true;
+//            DarkComputers.LOGGER.info("HALTED");
         }
     }
 

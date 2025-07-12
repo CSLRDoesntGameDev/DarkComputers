@@ -31,7 +31,7 @@ import java.util.Arrays;
 public class ComputerBlockEntity extends BlockEntity implements MenuProvider {
     public ComputerBlockEntity(BlockPos pos, BlockState blockState) {
         super(ModBlockEntities.COMPUTER_BE.get(), pos, blockState);
-        this.bus = new BusDC16();
+        this.bus = new BusDC16(this);
     }
     public final ItemStackHandler inventory = new ItemStackHandler(1) {
         @Override
@@ -50,7 +50,6 @@ public class ComputerBlockEntity extends BlockEntity implements MenuProvider {
     };
     public ItemStack storageStack = ItemStack.EMPTY;
     public BusDC16 bus;
-
 
 
     // The signature of this method matches the signature of the BlockEntityTicker functional interface.

@@ -8,16 +8,20 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.venitstudios.darkcomputers.DarkComputers;
 import net.venitstudios.darkcomputers.component.ModDataComponents;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.channels.ByteChannel;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 public class GenericStorageItem extends Item {
-    public GenericStorageItem(Properties properties) { super(properties); }
+    private static final Logger log = LoggerFactory.getLogger(GenericStorageItem.class);
 
+    public GenericStorageItem(Properties properties) { super(properties); }
     public static String getStorageUUID(ItemStack stack) { return stack.get(ModDataComponents.ITEM_UUID); }
     public static String getStoragePath(ItemStack stack) { return DarkComputers.modDataStoragePath + "/" + getStorageUUID(stack) + "/"; }
     public static String newUUID() { return UUID.randomUUID().toString(); }
@@ -30,7 +34,7 @@ public class GenericStorageItem extends Item {
     public static void ensurePath(ItemStack stack) {
         if (!checkDirectory(stack)) {
             boolean created = new File(getStoragePath(stack)).mkdirs();
-//            DarkComputers.LOGGER.info("made file? " + created);
+            DarkComputers.LOGGER.info("Created? " + created + " " + getStorageUUID(stack));
         }
     }
     public static File[] getFilesAt(ItemStack stack) {
@@ -41,15 +45,14 @@ public class GenericStorageItem extends Item {
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        if (!checkUUID(stack)) stack.set(ModDataComponents.ITEM_UUID, newUUID());
-
         super.inventoryTick(stack, level, entity, slotId, isSelected);
+
+        if (!checkUUID(stack) && (getStorageUUID(stack) == null)) stack.set(ModDataComponents.ITEM_UUID, newUUID());
     }
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        if (checkUUID(stack)) tooltipComponents.add(Component.literal(getStorageUUID(stack)).withColor(0xFFababab));
-        ensurePath(stack);
+        if (checkUUID(stack)) tooltipComponents.add(Component.literal("UUID: " + getStorageUUID(stack).toUpperCase()).withColor(0xFFababab));
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
     }
 
@@ -63,7 +66,6 @@ public class GenericStorageItem extends Item {
                 try {
                     boolean fileCreated = fi.createNewFile();
                     if (!fileCreated) DarkComputers.LOGGER.info("Failed to create file: " + filePath.toString());
-
                 } catch (IOException e) {
                     DarkComputers.LOGGER.info("IOException Thrown during DarkComputers.GenericStorageItem.writeData (B): {}", e.toString());
                 }
@@ -82,13 +84,16 @@ public class GenericStorageItem extends Item {
     public static byte[] readData(String fileName, ItemStack stack, int startAddress, int byteCount) {
         Path filePath = Path.of(getStoragePath(stack) + fileName);
         if (new File(filePath.toUri()).exists()) {
-
             try (RandomAccessFile raf = new RandomAccessFile(filePath.toFile(), "r")) {
                 try {
                     raf.seek(startAddress);
+                    if (byteCount <= 0) {
+                        byteCount = Math.toIntExact(raf.length());
+                    }
                 } catch (IOException ex) {
                     DarkComputers.LOGGER.info("IOException Thrown during DarkComputers.GenericStorageItem.readData (A): " + ex.toString());
                 }
+                DarkComputers.LOGGER.info("Reading " + byteCount + " Bytes");
                 byte[] buffer = new byte[byteCount];
                 int bytesRead = raf.read(buffer);
                 if (bytesRead < byteCount) {
@@ -99,6 +104,8 @@ public class GenericStorageItem extends Item {
                 DarkComputers.LOGGER.info("IOException Thrown during DarkComputers.GenericStorageItem.readData (B): " + e.toString());
             }
             return new byte[0];
+        } else {
+            DarkComputers.LOGGER.info(filePath.toUri() + " Does Not Exist!");
         }
         return new byte[0];
     }
