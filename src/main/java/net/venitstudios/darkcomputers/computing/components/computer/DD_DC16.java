@@ -14,9 +14,9 @@ public class DD_DC16 {
     public char[] screenBuffer;
     public BusDC16 bus;
     public void resetBuffer() {
-        screenBuffer = new char[29 * 17];
+        screenBuffer = new char[28 * 16];
 
-        for (int i = 0; i < 29 * 17; i++) {
+        for (int i = 0; i < 28 * 16; i++) {
             screenBuffer[i] = charSet[32];
         }
 
