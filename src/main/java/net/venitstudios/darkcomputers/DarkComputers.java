@@ -8,6 +8,7 @@ import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.venitstudios.darkcomputers.block.ModBlocks;
 import net.venitstudios.darkcomputers.block.entity.ModBlockEntities;
 import net.venitstudios.darkcomputers.component.ModDataComponents;
+import net.venitstudios.darkcomputers.datagen.ModRecipeProvider;
 import net.venitstudios.darkcomputers.item.ModCreativeTabs;
 import net.venitstudios.darkcomputers.item.ModItems;
 import net.venitstudios.darkcomputers.network.ModPayloads;
@@ -37,7 +38,7 @@ import java.nio.file.Path;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(DarkComputers.MOD_ID)
-public class    DarkComputers {
+public class DarkComputers {
     public static final String MOD_ID = "darkcomputers";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static Path levelPath;
@@ -65,6 +66,7 @@ public class    DarkComputers {
         ModMenuTypes.register(modEventBus);
 
         ModDataComponents.register(modEventBus);
+
         modEventBus.register(ModPayloads.class);
 
         NeoForge.EVENT_BUS.addListener(this::onWorldLoad);

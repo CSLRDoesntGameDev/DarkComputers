@@ -163,9 +163,9 @@ public class TextEditor {
                         //                        DarkComputers.LOGGER.info("CREATED NEW LINE! " + fileContents.length + " " + curRow);
                     }
 
-                    if (curRow + 2 > fileContents.length) {
-                        fileContents = Arrays.copyOf(fileContents, fileContents.length + 1);
-                        for (int i = 0; i < fileContents.length; i++) {
+                    if (curRow > fileContents.length) {
+                        fileContents = Arrays.copyOf(fileContents, curRow);
+                        for (int i = 0; i < curRow; i++) {
                             if (fileContents[i] == null) {
                                 fileContents[i] = "";
                             }
@@ -195,9 +195,9 @@ public class TextEditor {
                     break;
                 case 257: // enter
                     if (blockEntity.editingFile) {
-                        if (curRow + 2 > fileContents.length) {
-                            fileContents = Arrays.copyOf(fileContents, fileContents.length + 1);
-                            for (int i = 0; i < fileContents.length; i++) {
+                        if (curRow > fileContents.length) {
+                            fileContents = Arrays.copyOf(fileContents, curRow);
+                            for (int i = 0; i < curRow; i++) {
                                 if (fileContents[i] == null) {
                                     fileContents[i] = "";
                                 }
