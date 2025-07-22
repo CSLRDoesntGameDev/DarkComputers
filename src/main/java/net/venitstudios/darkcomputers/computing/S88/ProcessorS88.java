@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +31,7 @@ public class ProcessorS88 {
     private Map<Short, InstructionS88> instructions = new HashMap<>();
     public int[] REG = new int[16];
     public static final String srcPath = "assets/darkcomputers/compiler_langsrc/DC-S88_ISA.csv";
-    public void writeRegister(int register, int data) {
+        public void writeRegister(int register, int data) {
         if (register >= 0 && register < REG.length) {
             REG[register] = data;
         }
@@ -43,15 +44,19 @@ public class ProcessorS88 {
         return 0;
     }
 
-
-
     public ProcessorS88() {
         dumpFromCSV();
         bus = new BusS88(this);
     }
 
+    public ProcessorS88(BusS88 bus) {
+        dumpFromCSV();
+        this.bus = bus;
+    }
+
     public void resetCPU() {
         REG = new int[16];
+        REG[15] = 0x4200;
         halted = false;
     }
 
@@ -70,10 +75,10 @@ public class ProcessorS88 {
         short[] data = new short[3];
 
         for (int i = 0; i < 3; i++) {
-            readShort(getPC());
+            data[i] = readShort(getPC());
+            incPC();
             incPC();
         }
-
         return data;
     }
 
@@ -85,11 +90,10 @@ public class ProcessorS88 {
     public void setPC(int value) { REG[14] = value; }
     public void incPC() { setPC(getPC()+1); }
     public void decPC() { setPC(getPC()-1); }
-
     public int getSP() { return REG[15]; }
     public void setSP(int value) { REG[15] = value; }
-    public void incSP() { setPC(getSP()+1); }
-    public void decSP() { setPC(getSP()-1); }
+    public void incSP() { setSP(getSP()+1); }
+    public void decSP() { setSP(getSP()-1); }
 
         public void dumpFromCSV() {
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(srcPath);
@@ -97,11 +101,12 @@ public class ProcessorS88 {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
                 String line = "";
                 while ((line = reader.readLine()) != null) {
-                    if (!line.isEmpty()) {
-                        String[] lineData = line.split(",");
+                    if (!line.isEmpty() && !line.contains("Opcode (Hex)")) {
+                        String[] lineData = line.replaceAll("\" ", "").split(",");
                         short byteVal = Short.decode(lineData[0]);
-                        String tag = lineData[1];
-                        String[] operands = lineData[3].split(", ");
+                        String tag = lineData[2];
+                        String[] operands = Arrays.copyOfRange(lineData, 3, 6);
+
                         instructions.put(byteVal, new InstructionS88(byteVal, tag, operands));
                     }
                 }
@@ -112,20 +117,30 @@ public class ProcessorS88 {
     }
 
     public void step() {
-        if (halted) { return; }
+        if (halted) {
+//            DarkComputers.LOGGER.info("halted");
+            return;
+        }
 
         short opcode = readShort(getPC());
+        incPC(); incPC();
 
         if (instructions.containsKey(opcode)) {
             InstructionS88 instruction = instructions.get(opcode);
             Method opcodeMethod = null;
+//            DarkComputers.LOGGER.info(instruction.tag);
             try {
                 opcodeMethod = getClass().getMethod(instruction.tag);
                 opcodeMethod.invoke(this);
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                 e.printStackTrace();
-                System.out.println("Hit exception with opcode " + instruction.tag + ", might not exist?" );
+//                System.out.println("Hit exception with opcode " + instruction.tag + ", might not exist?" );
+                halted = true;
             }
+        } else {
+//            System.out.println("invalid opcode " + Integer.toBinaryString(opcode));
+            halted = true;
+
         }
     }
 
@@ -153,40 +168,48 @@ public class ProcessorS88 {
         writeByte(readRegister(opB) + (int)opC, (byte) (readRegister(opA) & 0xFF));
     }
 
+    public void CPR() {
+        short[] operands = readInstructionData();
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
+        for (int i = 0; i < opC; i++) {
+            writeByte(opB + i, readByte(opA + i));
+        }
+    }
+
     public void ADD() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1];
-        writeRegister(opB, readRegister(opB) + readRegister(opA));
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
+        writeRegister(opA, readRegister(opB) + readRegister(opC));
     }
 
     public void SUB() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1];
-        writeRegister(opB, readRegister(opB) - readRegister(opA));
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
+        writeRegister(opA, readRegister(opB) - readRegister(opC));
     }
 
     public void MUL() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1];
-        writeRegister(opB, readRegister(opB) * readRegister(opA));
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
+        writeRegister(opA, readRegister(opB) * readRegister(opC));
     }
 
     public void DIV() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1];
-        writeRegister(opB, readRegister(opB) / readRegister(opA));
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
+        writeRegister(opA, readRegister(opB) / readRegister(opC));
     }
 
     public void MOD() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1];
-        writeRegister(opB, readRegister(opB) % readRegister(opA));
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
+        writeRegister(opA, readRegister(opB) % readRegister(opC));
     }
 
     public void NEG() {
         short[] operands = readInstructionData();
         short opA = operands[0]; short opB = operands[1];
-        writeRegister(opB, -readRegister(opA));
+        writeRegister(opA, -readRegister(opB));
     }
 
     public void AND() {
@@ -220,14 +243,14 @@ public class ProcessorS88 {
     public void JMP() {
         short[] operands = readInstructionData();
         short opA = operands[0];
-        setPC(readRegister(opA));
+        setPC(opA);
     }
 
     public void JSR() {
         short[] operands = readInstructionData();
         short opA = operands[0];
         PSH((short)getPC());
-        setPC(readRegister(opA));
+        setPC(opA);
     }
 
     public void JIP() {
@@ -235,7 +258,7 @@ public class ProcessorS88 {
         short opA = operands[0]; short opB = operands[1];
         if (readRegister(opB) > 0) {
             PSH((short) getPC());
-            setPC(readRegister(opA));
+            setPC(opA);
         }
     }
 
@@ -245,41 +268,42 @@ public class ProcessorS88 {
 
     public void HLT() {
         halted = true;
+        DarkComputers.LOGGER.info("HALTED");
     }
 
     public void EQ() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1]; short opC = operands[1];
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
         writeRegister(opA, (readRegister(opB) == readRegister(opC)) ? 1 : 0);
     }
 
     public void NEQ() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1]; short opC = operands[1];
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
         writeRegister(opA, (readRegister(opB) != readRegister(opC)) ? 1 : 0);
     }
 
     public void LT() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1]; short opC = operands[1];
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
         writeRegister(opA, (readRegister(opB) < readRegister(opC)) ? 1 : 0);
     }
 
     public void GT() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1]; short opC = operands[1];
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
         writeRegister(opA, (readRegister(opB) > readRegister(opC)) ? 1 : 0);
     }
 
     public void LE() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1]; short opC = operands[1];
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
         writeRegister(opA, (readRegister(opB) <= readRegister(opC)) ? 1 : 0);
     }
 
     public void GE() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1]; short opC = operands[1];
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
         writeRegister(opA, (readRegister(opB) >= readRegister(opC)) ? 1 : 0);
     }
 

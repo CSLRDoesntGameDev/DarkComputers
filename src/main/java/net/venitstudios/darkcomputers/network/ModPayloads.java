@@ -25,7 +25,9 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.venitstudios.darkcomputers.DarkComputers;
 import net.venitstudios.darkcomputers.block.entity.custom.ComputerBlockEntity;
 import net.venitstudios.darkcomputers.block.entity.custom.TerminalBlockEntity;
+import net.venitstudios.darkcomputers.computing.S88.PPUS88;
 import net.venitstudios.darkcomputers.computing.compiler.CompilerDC16;
+import net.venitstudios.darkcomputers.computing.compiler.CompilerS88;
 import net.venitstudios.darkcomputers.computing.components.storage.GenericStorageItem;
 import net.venitstudios.darkcomputers.container.custom.ProgrammerContainer;
 import net.venitstudios.darkcomputers.item.ModItems;
@@ -41,11 +43,14 @@ import java.util.Arrays;
 
 public class ModPayloads {
 
-    public record cmpUpdate(BlockPos blockPos, byte[] charBuffer, int numCycles) implements CustomPacketPayload {
+    public record cmpUpdate(BlockPos blockPos, byte[] charBuffer, byte[] romBuff) implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<cmpUpdate> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(
                 DarkComputers.MOD_ID, "cmp_display_update"));
         public static final StreamCodec<ByteBuf, cmpUpdate> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.fromCodec(BlockPos.CODEC), cmpUpdate::blockPos,  ByteBufCodecs.BYTE_ARRAY, cmpUpdate::charBuffer, ByteBufCodecs.INT, cmpUpdate::numCycles, cmpUpdate::new);
+                ByteBufCodecs.fromCodec(BlockPos.CODEC), cmpUpdate::blockPos,
+                ByteBufCodecs.BYTE_ARRAY, cmpUpdate::charBuffer,
+                ByteBufCodecs.BYTE_ARRAY, cmpUpdate::romBuff,
+                cmpUpdate::new);
         @Override  public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
@@ -187,9 +192,12 @@ public class ModPayloads {
         BlockEntity blockEntity = context.player().level().getBlockEntity(packet.blockPos);
         if (blockEntity instanceof ComputerBlockEntity computer) {
             byte[] packetCharBuffer = packet.charBuffer;
-            String pcbString = new String(packetCharBuffer, StandardCharsets.UTF_8);
-            computer.bus.displayDriver.screenBuffer = pcbString.toCharArray();
-            computer.bus.cyclesRan = packet.numCycles;
+            byte[] packetRomBuffer = packet.romBuff;
+
+           PPUS88 ppu = computer.bus.ppu;
+
+           ppu.charBuf = packetCharBuffer;
+           ppu.charRom = packetRomBuffer;
         }
     }
 
@@ -240,7 +248,7 @@ public class ModPayloads {
         BlockEntity blockEntity = context.player().level().getBlockEntity(packet.blockPos);
         if (blockEntity instanceof ComputerBlockEntity computer) {
             computer.bus.resetBus();
-            computer.bus.processor.resetProcessor();
+            computer.bus.processor.resetCPU();
         }
     }
 
@@ -276,7 +284,7 @@ public class ModPayloads {
 
                 if (Files.exists(sourceFile)) {
 
-                    CompilerDC16 assembler = new CompilerDC16();
+                    CompilerS88 assembler = new CompilerS88();
 
                     short[] data = assembler.assembleFile(String.valueOf(sourceFile),destinationPath + "/eeprom.bin");
 

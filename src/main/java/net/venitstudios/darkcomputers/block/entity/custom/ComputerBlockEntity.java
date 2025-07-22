@@ -20,7 +20,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.venitstudios.darkcomputers.DarkComputers;
 import net.venitstudios.darkcomputers.block.entity.ModBlockEntities;
+import net.venitstudios.darkcomputers.computing.S88.BusS88;
 import net.venitstudios.darkcomputers.computing.components.computer.BusDC16;
 import net.venitstudios.darkcomputers.network.ModPayloads;
 import net.venitstudios.darkcomputers.screen.custom.display.ComputerMenu;
@@ -31,7 +33,7 @@ import java.util.Arrays;
 public class ComputerBlockEntity extends BlockEntity implements MenuProvider {
     public ComputerBlockEntity(BlockPos pos, BlockState blockState) {
         super(ModBlockEntities.COMPUTER_BE.get(), pos, blockState);
-        this.bus = new BusDC16(this);
+        this.bus = new BusS88(this);
     }
     public final ItemStackHandler inventory = new ItemStackHandler(1) {
         @Override
@@ -49,29 +51,34 @@ public class ComputerBlockEntity extends BlockEntity implements MenuProvider {
         }
     };
     public ItemStack storageStack = ItemStack.EMPTY;
-    public BusDC16 bus;
+    public BusS88 bus;
+
 
 
     // The signature of this method matches the signature of the BlockEntityTicker functional interface.
     public static void tick(Level level, BlockPos pos, BlockState state, ComputerBlockEntity blockEntity) {
-        if(level.getBlockEntity(pos) instanceof ComputerBlockEntity computerBlockEntity) {
-            float detectionRange = 7f;
-        char[] buffer = computerBlockEntity.bus.displayDriver.screenBuffer;
-        if (!Arrays.equals(buffer, new char[buffer.length])) {
-            PacketDistributor.sendToPlayersNear(
-                    (ServerLevel) level, null,
-                    pos.getX(), pos.getY(), pos.getZ(), detectionRange,
-                    new ModPayloads.cmpUpdate(pos, new String(buffer).getBytes(), computerBlockEntity.bus.cyclesRan)
-            );
+        if (level.getGameTime() % 2 == 0) {
+            if (level.getBlockEntity(pos) instanceof ComputerBlockEntity computerBlockEntity) {
+                float detectionRange = 7f;
+                byte[] charBuf = computerBlockEntity.bus.ppu.charBuf;
+
+                byte[] romBuf = computerBlockEntity.bus.ppu.charRom;
+                    PacketDistributor.sendToPlayersNear(
+                            (ServerLevel) level, null,
+                            pos.getX(), pos.getY(), pos.getZ(), detectionRange,
+                            new ModPayloads.cmpUpdate(pos, charBuf, romBuf)
+                    );
+
+            }
         }
-            if (!level.isClientSide) {
-                if (!blockEntity.bus.processor.halted) {
-                    for (int i = 0; i < blockEntity.bus.cyclesPerTick; i++) {
-                        blockEntity.bus.processor.clockCycle();
-                    }
+        if (!level.isClientSide) {
+            if (!blockEntity.bus.processor.halted) {
+                for (int i = 0; i < blockEntity.bus.cyclesPerTick; i++) {
+                    blockEntity.bus.processor.step();
                 }
             }
         }
+
     }
 
 

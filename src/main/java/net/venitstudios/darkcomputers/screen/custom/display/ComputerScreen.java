@@ -9,8 +9,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.venitstudios.darkcomputers.DarkComputers;
+import net.venitstudios.darkcomputers.computing.S88.PPUS88;
 import net.venitstudios.darkcomputers.computing.components.processor.ProcessorDC16;
 import net.venitstudios.darkcomputers.network.ModPayloads;
+
+import java.awt.*;
+import java.nio.file.Files;
+import java.util.Arrays;
 
 public class ComputerScreen extends AbstractContainerScreen<ComputerMenu> {
 
@@ -57,23 +62,46 @@ public class ComputerScreen extends AbstractContainerScreen<ComputerMenu> {
         );
     }
 
+
+    private static final byte[] RENDER_BITMASKS = {
+            (byte)0x01, (byte)0x02, (byte)0x04, (byte)0x08,
+            (byte)0x10, (byte)0x20, (byte)0x40, (byte)0x80
+    };
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         renderTooltip(guiGraphics, mouseX, mouseY);
-        int x1 = this.leftPos + 10;
-        int y1 = this.topPos + 20;
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        int x1 = this.leftPos + 14;
+        int y1 = this.topPos + 24;
 
-        char[] displayBuffer = cdm.blockEntity.bus.displayDriver.screenBuffer;
+        PPUS88 ppu = cdm.blockEntity.bus.ppu;
 
-        for (int x = 0; x < 29; x++) {
-            for (int y = 0; y < 17; y++) {
-                guiGraphics.drawString(this.font, String.valueOf(displayBuffer[(y * 29)+ x]), x1 + (x * 8), y1 + (y * 8), 0xFFFFFFFF);
+        byte[] charBuf = ppu.charBuf;
+        byte[] romBuf = ppu.charRom;
+
+        for (int ly1 = 0; ly1 < ppu.screenHeight; ly1++) {
+            for (int lx1 = 0; lx1 < ppu.screenWidth; lx1++) {
+                int curChar = (charBuf[(ly1 * ppu.screenWidth) + lx1]) * 8;
+
+                for (int ly2 = 0; ly2 < 8; ly2++) {
+                    for (int lx2 = 0; lx2 < 8; lx2++) {
+
+                        byte mask = (byte) (1 << lx2);
+
+                        if ((curChar + ly2 > 0) && (curChar + ly2 < romBuf.length) && (romBuf[curChar + ly2] & mask) > 0) {
+                            guiGraphics.fill(
+                                    x1 + (lx1 * 8) + lx2,
+                                    y1 + (ly1 * 8) + ly2,
+                                    x1 + (lx1 * 8) + lx2 + 1,
+                                    y1 + (ly1 * 8) + ly2 + 1,
+                                    0xFFFFFFFF);
+                        }
+                    }
+                }
+
             }
-
-            guiGraphics.drawString(this.font, String.valueOf(cdm.blockEntity.bus.cyclesRan), this.leftPos-32, this.topPos+32, 0xff00ff00);
         }
 
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
 
     }
 
@@ -85,6 +113,7 @@ public class ComputerScreen extends AbstractContainerScreen<ComputerMenu> {
         guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, imageWidth, imageHeight, 256, 256);
         guiGraphics.blit(SLOT_TEXTURE, x-19, y + 17, 0, 0, 18, 18, 18, 18);
     }
+
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {

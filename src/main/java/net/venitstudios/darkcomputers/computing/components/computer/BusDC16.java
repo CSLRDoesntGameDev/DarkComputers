@@ -20,14 +20,14 @@ public class BusDC16 {
     public DD_DC16 displayDriver;
     public ComputerBlockEntity computerBlockEntity;
     public short[] memory;
-    public int cyclesPerTick = 64;
+    public int cyclesPerTick = 1;
     public int cyclesRan = 0;
     public static List<Integer> keyBuffer = new ArrayList<Integer>();
     public static final int[] DISPLAY_RANGE = new int[] {0x7000, 0x7200};
-    public static final int KEYBOARD_KEY_RET_ADDRESS = 0x7201;
-    public static final int KEYBOARD_KEY_MOD_ADDRESS = 0x7202;
-    public static final int KEYBOARD_KEY_PRB_ADDRESS = 0x7203;
-    public static final int KEYBOARD_KEY_LEN_ADDRESS = 0x7204;
+    public static final int KEYBOARD_KEY_RET_ADDRESS = 0x3201;
+    public static final int KEYBOARD_KEY_MOD_ADDRESS = 0x3202;
+    public static final int KEYBOARD_KEY_PRB_ADDRESS = 0x3203;
+    public static final int KEYBOARD_KEY_LEN_ADDRESS = 0x3204;
     public BusDC16(ComputerBlockEntity computerBlockEntity) {
         this.processor = new ProcessorDC16();
         this.processor.bus = this;
@@ -99,7 +99,6 @@ public class BusDC16 {
                 break;
             }
         }
-
     }
 
     public void updateKeyState(int keyCode, int modifiers, boolean pressed) {
