@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.venitstudios.darkcomputers.block.entity.custom.ComputerBlockEntity;
+import net.venitstudios.darkcomputers.block.entity.custom.InterfaceBlockEntity;
 import net.venitstudios.darkcomputers.block.entity.custom.TerminalBlockEntity;
 
 import java.util.function.Supplier;
@@ -21,6 +22,9 @@ public class ModBlockEntities {
     public static final Supplier<BlockEntityType<ComputerBlockEntity>> COMPUTER_BE =
             BLOCK_ENTITIES.register("computer_be", () -> BlockEntityType.Builder.of(
                     ComputerBlockEntity::new, ModBlocks.COMPUTER_BLOCK.get()).build(null));
+    public static final Supplier<BlockEntityType<InterfaceBlockEntity>> INTERFACE_BE =
+            BLOCK_ENTITIES.register("inteface_be", () -> BlockEntityType.Builder.of(
+                    InterfaceBlockEntity::new, ModBlocks.INTERFACE_BLOCK.get()).build(null));
 
 
     public static void register(IEventBus eventBus) {

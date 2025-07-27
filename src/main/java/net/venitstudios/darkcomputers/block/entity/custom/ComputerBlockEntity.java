@@ -20,15 +20,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.network.PacketDistributor;
-import net.venitstudios.darkcomputers.DarkComputers;
 import net.venitstudios.darkcomputers.block.entity.ModBlockEntities;
 import net.venitstudios.darkcomputers.computing.S88.BusS88;
-import net.venitstudios.darkcomputers.computing.components.computer.BusDC16;
 import net.venitstudios.darkcomputers.network.ModPayloads;
 import net.venitstudios.darkcomputers.screen.custom.display.ComputerMenu;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
 
 public class ComputerBlockEntity extends BlockEntity implements MenuProvider {
     public ComputerBlockEntity(BlockPos pos, BlockState blockState) {
@@ -53,25 +49,38 @@ public class ComputerBlockEntity extends BlockEntity implements MenuProvider {
     public ItemStack storageStack = ItemStack.EMPTY;
     public BusS88 bus;
 
-
+    private static final BlockPos[] POS_OFFSETS = new BlockPos[] {
+            new BlockPos(1, 0, 0),
+            new BlockPos(-1, 0, 0),
+            new BlockPos(0, 1, 0),
+            new BlockPos(0, -1, 0),
+            new BlockPos(0, 0, 1),
+            new BlockPos(0, 0, -1)
+    };
 
     // The signature of this method matches the signature of the BlockEntityTicker functional interface.
     public static void tick(Level level, BlockPos pos, BlockState state, ComputerBlockEntity blockEntity) {
-        if (level.getGameTime() % 2 == 0) {
-            if (level.getBlockEntity(pos) instanceof ComputerBlockEntity computerBlockEntity) {
-                float detectionRange = 7f;
-                byte[] charBuf = computerBlockEntity.bus.ppu.charBuf;
-
-                byte[] romBuf = computerBlockEntity.bus.ppu.charRom;
-                    PacketDistributor.sendToPlayersNear(
-                            (ServerLevel) level, null,
-                            pos.getX(), pos.getY(), pos.getZ(), detectionRange,
-                            new ModPayloads.cmpUpdate(pos, charBuf, romBuf)
-                    );
-
-            }
-        }
         if (!level.isClientSide) {
+            if (level.getGameTime() % 2 == 0) {
+                if (level.getBlockEntity(pos) instanceof ComputerBlockEntity computerBlockEntity) {
+                    float detectionRange = 7f;
+                    byte[] charBuf = computerBlockEntity.bus.ppu.charBuf;
+
+                    byte[] romBuf = computerBlockEntity.bus.ppu.charRom;
+                        PacketDistributor.sendToPlayersNear(
+                                (ServerLevel) level, null,
+                                pos.getX(), pos.getY(), pos.getZ(), detectionRange,
+                                new ModPayloads.cmpUpdate(pos, charBuf, romBuf)
+                        );
+
+                }
+            }
+
+            if (level.getGameTime() % 10 == 0) {
+                scanNeighborsForDevices(level, pos, state, blockEntity);
+            }
+
+
             if (!blockEntity.bus.processor.halted) {
                 for (int i = 0; i < blockEntity.bus.cyclesPerTick; i++) {
                     blockEntity.bus.processor.step();
@@ -81,6 +90,22 @@ public class ComputerBlockEntity extends BlockEntity implements MenuProvider {
 
     }
 
+    public static void scanNeighborsForDevices(Level level, BlockPos pos, BlockState state, ComputerBlockEntity blockEntity) {
+        if (!level.isClientSide) {
+            if (level.getBlockEntity(pos) instanceof ComputerBlockEntity computerBlockEntity) {
+
+                for (int i = 0; i < 6; i++) {
+                    BlockPos checkPos = pos.offset(POS_OFFSETS[i]);
+                    BlockEntity entity = level.getBlockEntity(checkPos);
+
+                    if (entity instanceof InterfaceBlockEntity interfaceBlockEntity) {
+                        interfaceBlockEntity.initializeWithComputer(computerBlockEntity);
+                    }
+
+                }
+            }
+        }
+    }
 
     public void clearContents() {
         inventory.setStackInSlot(0, ItemStack.EMPTY);

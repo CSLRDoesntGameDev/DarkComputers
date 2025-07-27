@@ -55,7 +55,7 @@ public class GenericStorageItem extends Item {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
     }
 
-    public static void writeData(String fileName, ItemStack stack, int startAddress, byte[] data) {
+    public static void writeData(String fileName, ItemStack stack, int startAddress, byte[] data, boolean clean) {
         Path filePath = Path.of(getStoragePath(stack) + fileName);
         File fi = new File(filePath.toUri());
 
@@ -72,9 +72,9 @@ public class GenericStorageItem extends Item {
 
         if (fi.exists()) {
             try (RandomAccessFile raf = new RandomAccessFile(filePath.toFile(), "rw")) {
+                if (clean) { raf.setLength(0); }
                 raf.seek(startAddress);
                 raf.write(data);
-                raf.close();
             } catch (IOException e) {
                 DarkComputers.LOGGER.info("IOException Thrown during DarkComputers.GenericStorageItem.writeData (A): {}", e.toString());
             }

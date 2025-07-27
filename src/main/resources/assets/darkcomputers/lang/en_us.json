@@ -7,12 +7,15 @@
   "item.darkcomputers.eeprom_programmer": "EEPROM Flasher",
 
   "block.darkcomputers.terminal_block": "Terminal",
+  "block.darkcomputers.computer_block": "Computer",
+  "block.darkcomputers.interface_block": "Redstone Interface",
 
   "tooltip.darkcomputers.terminal_block": "Could be worse. Could be a Dumb Terminal.",
   "tooltip_alt.darkcomputers.terminal_block": "Used for writing text.",
 
   "gui.darkcomputers.terminal.request_item": "<- Please Provide a Floppy Disk.",
   "gui.darkcomputers.terminal.request_selection": "Select a File to Edit (^n to make a new file)",
+  "gui.darkcomputers.terminal.rename_file": "Renaming File",
 
   "gui.eeprom_program": "Flash"
 }

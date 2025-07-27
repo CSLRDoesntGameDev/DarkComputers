@@ -42,17 +42,14 @@ public class ProgrammerScreen extends AbstractContainerScreen<ProgrammerMenu> {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         switch (keyCode) {
-
             case 264: {
                 fileOffset += 1;
                 break;
             }
-
             case 265: {
                 fileOffset -= 1;
                 break;
             }
-
         }
 
         if (Minecraft.getInstance().options.keyInventory.matches(keyCode, scanCode)) {
@@ -96,25 +93,24 @@ public class ProgrammerScreen extends AbstractContainerScreen<ProgrammerMenu> {
 
         String[] files = inventoryStack.getOrDefault(ModDataComponents.GENERIC_STORAGE_FILES, "").split(",");
 
-        if (files.length > 0) {
-            files = Arrays.stream(files).sorted().toArray(String[]::new);
+        files = Arrays.stream(files).sorted().toArray(String[]::new);
 
-            guiGraphics.drawString(this.font, ">", this.leftPos + 55, this.topPos + 18, 0xFF3DFF3D, false);
+        guiGraphics.drawString(this.font, ">", this.leftPos + 55, this.topPos + 18, 0xFF3DFF3D, false);
 
-            for (int i = 0; i < files.length; i++) {
-                fileOffset = Math.clamp(fileOffset, 0, files.length-1);
+        for (int i = 0; i < files.length; i++) {
+            fileOffset = Math.clamp(fileOffset, 0, files.length-1);
 
-                if (i + fileOffset < files.length) {
-                    String text = files[i+fileOffset];
+            if (i + fileOffset < files.length) {
+                String text = files[i+fileOffset];
 
-                    int color = i == 0 ? 0xFF3DFF3D : 0xFF3D3D3D;
+                int color = i == 0 ? 0xFF3DFF3D : 0xFF3D3D3D;
 
-                    guiGraphics.drawString(this.font, text.substring(0, Math.min(text.length(), 10)), this.leftPos + 55 + 8, this.topPos + 18 + (i * 8), color, false);
+                guiGraphics.drawString(this.font, text.substring(0, Math.min(text.length(), 10)), this.leftPos + 55 + 8, this.topPos + 18 + (i * 8), color, false);
 
 
-                }
             }
         }
+
 
         // IDEA wouldn't stop giving me an error unless i had this here.
         String[] finalFiles = files.clone();
@@ -122,7 +118,6 @@ public class ProgrammerScreen extends AbstractContainerScreen<ProgrammerMenu> {
 
                 ItemStack floppyStorage = programmerMenu.getSlot(programmerMenu.getItems().size() - 2).getItem();
                 ItemStack eepromStorage = programmerMenu.getSlot(programmerMenu.getItems().size() - 1).getItem();
-//                DarkComputers.LOGGER.info(eepromStorage + " " + floppyStorage + " " + finalFiles.length + " " + fileOffset);
 
                 if (fileOffset < finalFiles.length) {
                     String fileName = finalFiles[fileOffset];

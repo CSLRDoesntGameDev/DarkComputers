@@ -10,10 +10,12 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.venitstudios.darkcomputers.DarkComputers;
+import net.venitstudios.darkcomputers.block.entity.custom.ComputerBlockEntity;
 import net.venitstudios.darkcomputers.block.entity.custom.TerminalBlockEntity;
 import net.venitstudios.darkcomputers.computing.components.terminal.TextEditor;
 import net.venitstudios.darkcomputers.network.ModPayloads;
 
+import java.awt.*;
 import java.awt.im.InputContext;
 import java.util.Arrays;
 
@@ -116,7 +118,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
         // yay hard coded values!
         int x2 = 236;
-        int y2 = 144;
+        int y2 = 140;
 
         int x3 = x1 + x2;
         int y3 = y1 + y2;
@@ -159,16 +161,34 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
         }
 
-        if (entity.editingFile) {
+        else if (entity.editor.renamingFile) {
+            guiGraphics.fill(x1 + (x2 / 2) - 64, y1 + (y2 / 2), x1 + (x2 / 2) + 64, y1 + (y2 / 2) + 8, 0xFF0000FF);
+
+            guiGraphics.drawCenteredString(this.font,
+                    Component.translatable("gui.darkcomputers.terminal.rename_file").getString(),
+                    x1 + (x2 / 2), y1 + (y2 / 2) - 24, 0xFFFFFFFF);
+
+            guiGraphics.drawCenteredString(this.font,
+                    editor.currentFileName,
+                    x1 + (x2 / 2), y1 + (y2 / 2) - 12, 0xFF999999);
+
+            guiGraphics.drawCenteredString(this.font,
+                    editor.newFileName,
+                    x1 + (x2 / 2), y1 + (y2 / 2), 0xFFFFFFFF);
+        }
+
+        else if (entity.editingFile) {
             // text editor gui
 
             String rowColInfo = String.format("L %03d C %03d", editor.curRow, editor.curCol);
             guiGraphics.fill(x1, y1, x3, y1 + 9, 0xFFA5A5A5);
-            guiGraphics.drawString(this.font, rowColInfo, x3 - (rowColInfo.length() * 6), this.topPos + 21, 0xFF404040, false);
+            guiGraphics.fill(x1, y3 - 14, x3, y3 - 5, 0xFFA5A5A5);
 
-            if (editor.currentFile != null) {
-                guiGraphics.drawString(this.font, editor.currentFile.getName(), x1 + 8, this.topPos + 21, 0xFF404040, false);
-            }
+            guiGraphics.drawString(this.font, rowColInfo, x3 - (rowColInfo.length() * 6), this.topPos + 21, 0xFF404040, false);
+            guiGraphics.drawString(this.font, editor.currentFileName, x1 + 8, this.topPos + 21, 0xFF404040, false);
+            guiGraphics.drawString(this.font, "^Save ^Exit ^Rename", x1 + 8, y3-13, 0xFF404040, false);
+
+
 
             editor.curRowOffset = Math.round((float) (editor.curRow / (rowCount - 2))) * (rowCount - 2);
             editor.curColOffset = Math.max(0, editor.curCol - (colCount - 7));

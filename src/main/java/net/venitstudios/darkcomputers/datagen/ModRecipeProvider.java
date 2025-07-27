@@ -46,6 +46,17 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .save(recipeOutput);
 
 
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.INTERFACE_BLOCK.get())
+                .pattern("IEI")
+                .pattern("IRI")
+                .pattern("III")
+                .define('I', Items.IRON_INGOT)
+                .define('R', Items.REDSTONE_BLOCK)
+                .define('E', ModItems.EEPROM)
+                .unlockedBy("has_iron_ingot", has(Items.IRON_INGOT))
+                .unlockedBy("has_redstone", has(Items.REDSTONE))
+                .save(recipeOutput);
+
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.EEPROM.get())
                 .pattern(" G ")
                 .pattern(" R ")
@@ -58,9 +69,21 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .unlockedBy("has_redstone", has(Items.REDSTONE))
                 .save(recipeOutput);
 
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.EEPROM_PROGRAMMER.get())
+                .pattern(" E ")
+                .pattern(" R ")
+                .pattern(" L ")
+                .define('L', Items.IRON_INGOT)
+                .define('E', ModItems.EEPROM)
+                .define('R', Items.REDSTONE)
+                .unlockedBy("has_paper", has(Items.PAPER))
+                .unlockedBy("has_gold_nugget", has(Items.GOLD_NUGGET))
+                .unlockedBy("has_redstone", has(Items.REDSTONE))
+                .save(recipeOutput);
+
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.FLOPPY_DISK.get())
                 .pattern("PI ")
-                .pattern("RI ")
+                .pattern("R  ")
                 .pattern("   ")
                 .define('I', Items.IRON_NUGGET)
                 .define('R', Items.REDSTONE)

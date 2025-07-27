@@ -1,14 +1,9 @@
 package net.venitstudios.darkcomputers.network;
 
-import com.google.common.collect.BoundType;
-import com.mojang.authlib.minecraft.client.MinecraftClient;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.OutgoingChatMessage;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -26,20 +21,16 @@ import net.venitstudios.darkcomputers.DarkComputers;
 import net.venitstudios.darkcomputers.block.entity.custom.ComputerBlockEntity;
 import net.venitstudios.darkcomputers.block.entity.custom.TerminalBlockEntity;
 import net.venitstudios.darkcomputers.computing.S88.PPUS88;
-import net.venitstudios.darkcomputers.computing.compiler.CompilerDC16;
-import net.venitstudios.darkcomputers.computing.compiler.CompilerS88;
+import net.venitstudios.darkcomputers.computing.compiler.AssemblerS88;
 import net.venitstudios.darkcomputers.computing.components.storage.GenericStorageItem;
 import net.venitstudios.darkcomputers.container.custom.ProgrammerContainer;
 import net.venitstudios.darkcomputers.item.ModItems;
-import net.venitstudios.darkcomputers.item.custom.EepromProgrammer;
 import net.venitstudios.darkcomputers.screen.custom.terminal.TerminalScreen;
-import org.openjdk.nashorn.internal.codegen.Compiler;
 
-import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class ModPayloads {
 
@@ -83,7 +74,11 @@ public class ModPayloads {
     }
 
 
-    public record fileStatusUpdate(BlockPos blockPos, String fileList, String currentFile, boolean editingFile, ItemStack itemStack) implements CustomPacketPayload {
+    public record fileStatusUpdate(
+                                BlockPos blockPos,
+                                    String fileList, String currentFile,
+                                            boolean editingFile, boolean renamingFile,
+                                                ItemStack itemStack) implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<fileStatusUpdate> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(
                 DarkComputers.MOD_ID, "server_update_terminal_file_status"));
         public static final StreamCodec<ByteBuf, fileStatusUpdate> STREAM_CODEC = StreamCodec.composite(
@@ -91,18 +86,20 @@ public class ModPayloads {
                 ByteBufCodecs.STRING_UTF8, fileStatusUpdate::fileList,
                 ByteBufCodecs.STRING_UTF8, fileStatusUpdate::currentFile,
                 ByteBufCodecs.BOOL, fileStatusUpdate::editingFile,
+                ByteBufCodecs.BOOL, fileStatusUpdate::renamingFile,
                 ByteBufCodecs.fromCodec(ItemStack.CODEC), fileStatusUpdate::itemStack,
                 fileStatusUpdate::new);
         @Override  public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
 
-    public record terminalFileContentUpdate(BlockPos blockPos, byte[] content) implements CustomPacketPayload {
+    public record terminalFileContentUpdate(BlockPos blockPos, byte[] content, String newFileName) implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<terminalFileContentUpdate> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(
                 DarkComputers.MOD_ID, "server_update_terminal_file_content"));
         public static final StreamCodec<ByteBuf, terminalFileContentUpdate> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.fromCodec(BlockPos.CODEC), terminalFileContentUpdate::blockPos,
                 ByteBufCodecs.BYTE_ARRAY, terminalFileContentUpdate::content,
+                ByteBufCodecs.STRING_UTF8, terminalFileContentUpdate::newFileName,
                 terminalFileContentUpdate::new);
         @Override  public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
@@ -213,7 +210,9 @@ public class ModPayloads {
                 terminal.editor.currentScreen.files = Arrays.stream(terminal.editor.currentScreen.files).sorted().toArray(String[]::new);
                 terminal.storageStack = packet.itemStack;
                 terminal.editingFile = packet.editingFile;
+                terminal.editor.renamingFile = packet.renamingFile;
                 terminal.editor.currentFileName = packet.currentFile;
+//                terminal.editor.newFileName = packet.newFileName;
             }
         }
     }
@@ -241,6 +240,7 @@ public class ModPayloads {
         BlockEntity blockEntity = context.player().level().getBlockEntity(packet.blockPos);
         if (blockEntity instanceof TerminalBlockEntity terminal) {
             terminal.editor.loadBytesToEdit(packet.content);
+            terminal.editor.newFileName = packet.newFileName;
         }
     }
 
@@ -264,16 +264,22 @@ public class ModPayloads {
     }
 
     private static void serverProgrammerEepromFlash(final programmerFlashEeprom packet, final IPayloadContext context) {
+        DarkComputers.LOGGER.info(packet.toString());
+
         if (!(packet.fileName.isBlank())) {
 
             ServerPlayer player = (ServerPlayer) context.player();
             ItemStack mainHandItem = player.getMainHandItem();
-
             if (mainHandItem.getItem().equals(ModItems.EEPROM_PROGRAMMER.get())) {
                 ProgrammerContainer container = new ProgrammerContainer(mainHandItem);
 
                 ItemStack storageSource = container.getItem(0);
                 ItemStack storageDestination = container.getItem(1);
+
+                if (Objects.equals(GenericStorageItem.getStorageUUID(storageDestination), null)) {
+                    DarkComputers.LOGGER.error("INVALID EEPROM");
+                    return;
+                }
 
                 GenericStorageItem.ensurePath(storageSource);
                 GenericStorageItem.ensurePath(storageDestination);
@@ -284,7 +290,7 @@ public class ModPayloads {
 
                 if (Files.exists(sourceFile)) {
 
-                    CompilerS88 assembler = new CompilerS88();
+                    AssemblerS88 assembler = new AssemblerS88();
 
                     short[] data = assembler.assembleFile(String.valueOf(sourceFile),destinationPath + "/eeprom.bin");
 

@@ -1,5 +1,6 @@
 package net.venitstudios.darkcomputers.computing.components.terminal;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.world.item.ItemStack;
 import net.venitstudios.darkcomputers.DarkComputers;
 import net.venitstudios.darkcomputers.block.entity.custom.TerminalBlockEntity;
@@ -23,7 +24,9 @@ public class TextEditor {
     public int curRowOffset = 0;
     public int curColOffset = 0;
     public boolean editingFile = false;
+    public boolean renamingFile = false;
     public String currentFileName = "";
+    public String newFileName = "";
     public TerminalScreen currentScreen;
     public File currentFile;
     public TextEditor(TerminalBlockEntity blockEntity) {
@@ -43,11 +46,12 @@ public class TextEditor {
             ItemStack disk = this.blockEntity.storageStack;
             StringBuilder builder = new StringBuilder();
             for (String line : this.fileContents) {
-                builder.append(line);
-                builder.append("\n");
+                if (line != null && !line.trim().isEmpty()) {
+                    builder.append(line).append("\n");
+                }
             }
             byte[] data = builder.toString().getBytes(StandardCharsets.UTF_8);
-            GenericStorageItem.writeData(this.currentFile.getName(), disk, 0, data);
+            GenericStorageItem.writeData(this.currentFile.getName(), disk, 0 , data, true);
         }
     }
     public void newFile() {
@@ -69,6 +73,15 @@ public class TextEditor {
                 }
             }
         }
+    }
+
+    public File renameFile(File file, String newName) {
+        if ( isServer() ) {
+            File nf = new File(file.getAbsolutePath().replaceAll(file.getName(), newName));
+            file.renameTo(nf);
+            return nf;
+        }
+        return null;
     }
 
     public void loadFile(File file) {
@@ -114,29 +127,41 @@ public class TextEditor {
     public void charTyped(char chr, int modifiers) {
         if ( isServer() ) {
             String chrstr = String.valueOf(chr);
+            if (renamingFile) {
+                newFileName = (newFileName + chrstr).substring(0, Math.min(newFileName.length() + 1, 20)).trim();
+            } else {
+                if (curRow < fileContents.length) {
+                    String line = fileContents[curRow];
+                    if (line == null) line = "";
+                    curCol = Math.min(curCol, line.length());
+                    if (curCol <= line.length()) {
+                        // Insert character at cursor
+                        String modified = line.substring(0, curCol) + chrstr + line.substring(curCol);
+                        fileContents[curRow] = modified;
+                        curCol += 1;
+                    }
 
-            if (curRow < fileContents.length) {
-                String line = fileContents[curRow];
-                if (line == null) line = "";
-                curCol = Math.min(curCol, line.length());
-                if (curCol <= line.length()) {
-                    // Insert character at cursor
-                    String modified = line.substring(0, curCol) + chrstr + line.substring(curCol);
-                    fileContents[curRow] = modified;
-                    curCol += 1;
                 }
-
             }
         }
 
     }
 
     public void keyPressed(int keyCode, int scanCode, int modifiers) {
+        editingFile = blockEntity.editingFile;
         boolean server = isServer();
+//        DarkComputers.LOGGER.info(keyCode + " " + scanCode + " " + modifiers);
+        renamingFile = renamingFile && blockEntity.editingFile;
         if ( isServer() ) {
             int modStep = modifiers == 2 ? 4 : 1;
             String line = "";
             switch (keyCode) {
+                case InputConstants.KEY_R:
+                    if (modifiers == 2) {
+                        renamingFile = true;
+                        newFileName = currentFileName;
+                    }
+                    break;
                 case 69: // e
                     if (modifiers == 2) {
                         resetEditor();
@@ -160,16 +185,7 @@ public class TextEditor {
                                 fileContents[i] = "";
                             }
                         }
-                        //                        DarkComputers.LOGGER.info("CREATED NEW LINE! " + fileContents.length + " " + curRow);
-                    }
-
-                    if (curRow > fileContents.length) {
-                        fileContents = Arrays.copyOf(fileContents, curRow);
-                        for (int i = 0; i < curRow; i++) {
-                            if (fileContents[i] == null) {
-                                fileContents[i] = "";
-                            }
-                        }
+//                        DarkComputers.LOGGER.info("CREATED NEW LINE! " + fileContents.length + " " + curRow);
                     }
 
                     curRow += 1;
@@ -194,32 +210,42 @@ public class TextEditor {
                     curCol -= curCol > 0 ? modStep : 0;
                     break;
                 case 257: // enter
-                    if (blockEntity.editingFile) {
-                        if (curRow > fileContents.length) {
-                            fileContents = Arrays.copyOf(fileContents, curRow);
-                            for (int i = 0; i < curRow; i++) {
-                                if (fileContents[i] == null) {
-                                    fileContents[i] = "";
-                                }
-                            }
-                        }
+                    if (blockEntity.editingFile && !renamingFile) {
+                        // stolen from stack overflow :)
                         if (curRow < fileContents.length) {
+                            if (curRow + 1 >= fileContents.length) {
+                                fileContents = Arrays.copyOf(fileContents, fileContents.length + 1);
+                            }
+
+                            String lineBefore = fileContents[curRow] != null ? fileContents[curRow] : "";
+
+                            String before = lineBefore.substring(0, curCol);
+                            String after = lineBefore.substring(curCol);
+
+                            for (int i = fileContents.length - 2; i >= curRow + 1; i--) {
+                                fileContents[i + 1] = fileContents[i];
+                            }
+
+                            fileContents[curRow] = before;
+                            fileContents[curRow + 1] = after;
+
                             curRow += 1;
-                            line = fileContents[curRow];
-                            if (line == null) line = "";
-                            curCol = Math.min(curCol, line.length());
+                            curCol = 0;
                         }
-                    } else {
+                    } else if (!blockEntity.editingFile && !renamingFile) {
                         File[] files = GenericStorageItem.getFilesAt(blockEntity.storageStack);
                         files = Arrays.stream(files).sorted().toArray(File[]::new);
                         if (this.curRow >= 0 && this.curRow < files.length) {
                             File selectedFile = files[this.curRow];
-//                            DarkComputers.LOGGER.info("Editor List: " + Arrays.toString(files));
                             loadFile(selectedFile);
                             curRow = 0;
                         }
+                    } else {
+                        File file = renameFile(currentFile, newFileName);
+                        loadFile(file);
+                        newFileName = currentFileName;
+                        renamingFile = false;
                     }
-
                     break;
                 case 261: // delete
                     if (curRow < fileContents.length) {
@@ -233,21 +259,35 @@ public class TextEditor {
                     }
                     break;
                 case 259: // backspace
-                    if (curRow < fileContents.length) {
-                        line = fileContents[curRow];
-                        if (line == null) line = "";
-                        if (curCol > 0 && curCol <= line.length()) {
-                            String modified = line.substring(0, curCol - 1) + line.substring(curCol);
-                            fileContents[curRow] = modified;
-                            curCol -= 1;
-                        }
-                        if (curCol == 0 && curRow > 0) {
-                            curRow -= 1;
+                    // based on the code stolen from stack overflow :)
+                    if (blockEntity.editingFile && !renamingFile) {
+                        if (curRow < fileContents.length) {
                             line = fileContents[curRow];
-                            curCol = line.length();
+                            if (line == null) line = "";
+
+                            if (curCol > 0) {
+                                fileContents[curRow] = line.substring(0, curCol - 1) + line.substring(curCol);
+                                curCol -= 1;
+                            } else if (curRow > 0) {
+                                String before = fileContents[curRow - 1];
+                                if (before == null) before = "";
+
+                                fileContents[curRow - 1] = before + line;
+
+                                for (int i = curRow; i < fileContents.length - 1; i++) {
+                                    fileContents[i] = fileContents[i + 1];
+                                }
+                                fileContents[fileContents.length - 1] = "";
+
+                                curRow -= 1;
+                                curCol = before.length();
+                            }
                         }
-                        break;
+                    }  else if (renamingFile) {
+                        newFileName = newFileName.substring(0, Math.max(newFileName.length() - 1, 0)).trim();
                     }
+                        break;
+
             }
         }
     }
