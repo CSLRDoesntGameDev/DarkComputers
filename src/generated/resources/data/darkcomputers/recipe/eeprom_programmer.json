@@ -2,23 +2,23 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "I": {
-      "item": "minecraft:iron_nugget"
+    "E": {
+      "item": "darkcomputers:eeprom_a"
     },
-    "P": {
-      "item": "minecraft:paper"
+    "L": {
+      "item": "minecraft:iron_ingot"
     },
     "R": {
       "item": "minecraft:redstone"
     }
   },
   "pattern": [
-    "PI ",
-    "R  ",
-    "   "
+    " E ",
+    " R ",
+    " L "
   ],
   "result": {
     "count": 1,
-    "id": "darkcomputers:floppy_a"
+    "id": "darkcomputers:eeprom_programmer"
   }
 }

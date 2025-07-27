@@ -5,7 +5,7 @@ import net.venitstudios.darkcomputers.DarkComputers;
 import java.io.*;
 import java.util.*;
 
-public class CompilerS88 {
+public class AssemblerS88 {
     public class InstructionTemplate {
         public final short opcode;
         public final String[] operands;
@@ -71,10 +71,17 @@ public class CompilerS88 {
                 DarkComputers.LOGGER.info(String.valueOf((short) Integer.parseInt(operand.substring(2), 16)));
                 return (short) Integer.parseInt(operand.substring(2), 16);
             }
+
+            if (operand.startsWith("0b") || operand.startsWith("0B")) {
+                DarkComputers.LOGGER.info(String.valueOf((short) Integer.parseInt(operand.substring(2), 16)));
+                return (short) Integer.parseInt(operand.substring(2), 2);
+            }
             return Short.decode(operand);
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid operand: " + operand);
         }
+
+
     }
 
     public short[] assembleFile(String filePath, String outputPath) {

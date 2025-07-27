@@ -28,6 +28,7 @@ public class ProcessorS88 {
     }
     public BusS88 bus;
     public boolean halted = true;
+    public int ignored_cycles = 0;
     private Map<Short, InstructionS88> instructions = new HashMap<>();
     public int[] REG = new int[16];
     public static final String srcPath = "assets/darkcomputers/compiler_langsrc/DC-S88_ISA.csv";
@@ -58,6 +59,7 @@ public class ProcessorS88 {
         REG = new int[16];
         REG[15] = 0x4200;
         halted = false;
+        ignored_cycles = 0;
     }
 
     public byte readByte(int address) {
@@ -118,7 +120,10 @@ public class ProcessorS88 {
 
     public void step() {
         if (halted) {
-//            DarkComputers.LOGGER.info("halted");
+            return;
+        }
+        if (ignored_cycles > 0) {
+            ignored_cycles = ignored_cycles - 1;
             return;
         }
 
@@ -159,13 +164,13 @@ public class ProcessorS88 {
     public void LDR() {
         short[] operands = readInstructionData();
         short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
-        writeRegister(opA, (int) readByte(readRegister(opB) + (int) opC) & 0xFF);
+        writeRegister(opA, readShort(readRegister(opB) + (int) opC));
     }
 
     public void STR() {
         short[] operands = readInstructionData();
         short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
-        writeByte(readRegister(opB) + (int)opC, (byte) (readRegister(opA) & 0xFF));
+        writeByte(readRegister(opB) + (int)opC, (byte) (readRegister(opA)));
     }
 
     public void CPR() {
@@ -180,6 +185,7 @@ public class ProcessorS88 {
         short[] operands = readInstructionData();
         short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
         writeRegister(opA, readRegister(opB) + readRegister(opC));
+
     }
 
     public void SUB() {
@@ -211,33 +217,38 @@ public class ProcessorS88 {
         short opA = operands[0]; short opB = operands[1];
         writeRegister(opA, -readRegister(opB));
     }
+    public void NOT() {
+        short[] operands = readInstructionData();
+        short opA = operands[0]; short opB = operands[1];
+        writeRegister(opA, ~readRegister(opB));
+    }
 
     public void AND() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1];
-        writeRegister(opB, readRegister(opB) & readRegister(opA));
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
+        writeRegister(opA, readRegister(opB) & readRegister(opC));
     }
     public void OR() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1];
-        writeRegister(opB, readRegister(opB) | readRegister(opA));
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
+        writeRegister(opA, readRegister(opB) | readRegister(opC));
     }
     public void XOR() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1];
-        writeRegister(opB, readRegister(opB) ^ readRegister(opA));
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
+        writeRegister(opA, readRegister(opB) ^ readRegister(opC));
     }
 
     public void SHL() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1];
-        writeRegister(opB, readRegister(opB) << readRegister(opA));
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
+        writeRegister(opA, readRegister(opB) << readRegister(opC));
     }
 
     public void SHR() {
         short[] operands = readInstructionData();
-        short opA = operands[0]; short opB = operands[1];
-        writeRegister(opB, readRegister(opB) >> readRegister(opA));
+        short opA = operands[0]; short opB = operands[1]; short opC = operands[2];
+        writeRegister(opA, readRegister(opB) >> readRegister(opC));
     }
 
     public void JMP() {
@@ -268,7 +279,11 @@ public class ProcessorS88 {
 
     public void HLT() {
         halted = true;
-        DarkComputers.LOGGER.info("HALTED");
+    }
+    public void WAT() {
+        short[] operands = readInstructionData();
+        ignored_cycles = operands[0];
+
     }
 
     public void EQ() {

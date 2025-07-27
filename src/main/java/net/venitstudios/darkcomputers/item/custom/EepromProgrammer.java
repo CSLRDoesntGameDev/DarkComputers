@@ -2,6 +2,7 @@ package net.venitstudios.darkcomputers.item.custom;
 
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -45,7 +46,6 @@ public class EepromProgrammer extends Item implements MenuProvider {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
 
         if (level.getGameTime() % 4 == 0) {
-
             if (!level.isClientSide) {
                 String finalErrorString = "";
                 if (entity instanceof ServerPlayer player && !stack.isEmpty()) {
@@ -57,12 +57,13 @@ public class EepromProgrammer extends Item implements MenuProvider {
                         inventoryStack = player.getOffhandItem();
                     }
 
-                    if (inventoryStack.getItem().equals(ModItems.EEPROM_PROGRAMMER.get())) {
 
-                        ProgrammerContainer container = new ProgrammerContainer(inventoryStack);
+                    ProgrammerContainer container = new ProgrammerContainer(inventoryStack);
 
-                        ItemStack storageItemA = container.getItem(0);
-                        ItemStack storageItemB = container.getItem(1);
+                    ItemStack storageItemA = container.getItem(0);
+                    ItemStack storageItemB = container.getItem(1);
+
+                    if (storageItemA.getCount() > 0 && storageItemB.getCount() > 0) {
 
                         if (storageItemA.getItem().equals(ModItems.FLOPPY_DISK.get())) {
                             File[] files = GenericStorageItem.getFilesAt(storageItemA);
@@ -77,22 +78,12 @@ public class EepromProgrammer extends Item implements MenuProvider {
                                     fileList.append(",");
                                 }
                             }
-                            if (!Objects.equals(stack.get(ModDataComponents.GENERIC_STORAGE_FILES), fileList.toString())) {
-                                stack.set(ModDataComponents.GENERIC_STORAGE_FILES, fileList.toString());
-                            }
-
-                        } else
-                        {
-                            finalErrorString += "No Storage";
+                            stack.set(ModDataComponents.GENERIC_STORAGE_FILES, fileList.toString());
+                        } else {
+                            stack.set(ModDataComponents.GENERIC_STORAGE_FILES, ",No Storage Medium");
                         }
-                        if (!storageItemB.getItem().equals(ModItems.EEPROM.get())) {
-                            finalErrorString += ",No ROM";
-                        }
-
-                        if (!finalErrorString.isBlank() && !Objects.equals(stack.get(ModDataComponents.GENERIC_STORAGE_FILES), finalErrorString)) {
-                            stack.set(ModDataComponents.GENERIC_STORAGE_FILES, finalErrorString);
-                        }
-
+                    } else {
+                        stack.set(ModDataComponents.GENERIC_STORAGE_FILES, ",No Storage Medium");
                     }
                 }
             }

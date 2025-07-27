@@ -52,7 +52,6 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
     public TextEditor editor;
     public boolean editingFile = false;
 
-
     public static void tick(Level level, BlockPos pos, BlockState state, TerminalBlockEntity blockEntity) {
 
         if (level.getBlockEntity(pos) instanceof TerminalBlockEntity terminalBlockEntity && !level.isClientSide()) {
@@ -80,6 +79,7 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
                         Arrays.toString(strings).replaceAll("[\\[\\]]", " "),
                         fileName,
                         terminalBlockEntity.editingFile,
+                        terminalBlockEntity.editor.renamingFile,
                         terminalBlockEntity.storageStack
                 );
                 PacketDistributor.sendToPlayersNear((ServerLevel) level, null, pos.getX(), pos.getY(), pos.getZ(), detectionRange, fileStatusUpdate);
@@ -87,7 +87,8 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
                 ModPayloads.fileStatusUpdate fileStatusUpdate = new ModPayloads.fileStatusUpdate(pos,
                         "",
                         "",
-                        terminalBlockEntity.editingFile,
+                        false,
+                        false,
                         ModItems.FLOPPY_DISK.toStack(1)
                 );
 
@@ -96,7 +97,9 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
             }
 
 
-          if (terminalBlockEntity.editor.currentFile != null) {
+        TextEditor editor = terminalBlockEntity.editor;
+
+          if (editor != null) {
               StringBuilder builder = new StringBuilder();
 
               for (String line : terminalBlockEntity.editor.fileContents) {
@@ -109,18 +112,20 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
 
               if (data.length < 10_000_000) {
                   terminalFileContentUpdate = new ModPayloads.terminalFileContentUpdate(pos,
-                          data);
+                          data,
+                          editor.newFileName
+                          );
               } else {
                   terminalFileContentUpdate = new ModPayloads.terminalFileContentUpdate(pos,
                           ("File Too Large!\nyou will need to manually\nmake the file smaller\nif you're on a server contact the host\nStorage Disk UUID:\n" +
-                                  terminalBlockEntity.storageStack.get(ModDataComponents.ITEM_UUID)).getBytes(StandardCharsets.UTF_8));
+                                  terminalBlockEntity.storageStack.get(ModDataComponents.ITEM_UUID)).getBytes(StandardCharsets.UTF_8),
+                          editor.newFileName);
               }
 
               PacketDistributor.sendToPlayersNear((ServerLevel) level, null, pos.getX(), pos.getY(), pos.getZ(), detectionRange, terminalFileContentUpdate);
           }
 
 
-            TextEditor editor = terminalBlockEntity.editor;
 
             ModPayloads.terminalCursorUpdate terminalCursorUpdate = new ModPayloads.terminalCursorUpdate(pos,
                     editor.curCol, editor.curRow, editor.curRowOffset, editor.curColOffset);

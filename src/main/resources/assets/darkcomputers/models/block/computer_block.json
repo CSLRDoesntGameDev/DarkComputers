@@ -1,11 +1,21 @@
 {
-  "parent": "minecraft:block/cube",
+  "texture_size": [64, 64],
   "textures": {
-    "down": "darkcomputers:block/opencomputers/case_side",
-    "east": "darkcomputers:block/opencomputers/case_side",
-    "north": "darkcomputers:block/opencomputers/case_front",
-    "south": "darkcomputers:block/opencomputers/case_side",
-    "up": "darkcomputers:block/opencomputers/case_top",
-    "west": "darkcomputers:block/opencomputers/case_side"
-  }
+    "0": "darkcomputers:block/computer_block",
+    "particle": "darkcomputers:block/computer_block"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": {"uv": [0, 0, 4, 4], "texture": "#0"},
+        "east": {"uv": [0, 4, 4, 8], "texture": "#0"},
+        "south": {"uv": [4, 0, 8, 4], "texture": "#0"},
+        "west": {"uv": [4, 4, 8, 8], "texture": "#0"},
+        "up": {"uv": [4, 12, 0, 8], "texture": "#0"},
+        "down": {"uv": [12, 0, 8, 4], "texture": "#0"}
+      }
+    }
+  ]
 }

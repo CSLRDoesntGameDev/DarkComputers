@@ -2,6 +2,8 @@ package net.venitstudios.darkcomputers.screen.custom.programmer;
 
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -9,6 +11,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
+import net.venitstudios.darkcomputers.DarkComputers;
 import net.venitstudios.darkcomputers.container.FilteredSlot;
 import net.venitstudios.darkcomputers.container.custom.ProgrammerContainer;
 import net.venitstudios.darkcomputers.item.ModItems;
@@ -36,6 +39,25 @@ public class ProgrammerMenu extends AbstractContainerMenu  {
             this.addSlot(new FilteredSlot(container, 0, 20, 33, ModItems.FLOPPY_DISK.get(), 1));
             this.addSlot(new FilteredSlot(container, 1, 143, 33, ModItems.EEPROM.get(), 1));
         }
+    }
+
+
+    @Override
+    public void removed(Player player) {
+//        if (player instanceof ServerPlayer) {
+//            ProgrammerContainer container = new ProgrammerContainer(stack);
+//            for (int i = 0; i < container.getContainerSize(); i++) {
+//                ItemStack stack = container.getItem(i);
+//                if (!stack.isEmpty()) {
+//                    if (!player.getInventory().add(stack)) {
+//                        player.drop(stack, true);
+//                    }
+//                    container.setItem(i, ItemStack.EMPTY);
+//                }
+//            }
+//        }
+
+        super.removed(player);
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

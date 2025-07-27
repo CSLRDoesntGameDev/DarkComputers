@@ -10,6 +10,7 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.venitstudios.darkcomputers.DarkComputers;
 import net.venitstudios.darkcomputers.block.custom.ComputerBlock;
+import net.venitstudios.darkcomputers.block.custom.InterfaceBlock;
 import net.venitstudios.darkcomputers.block.custom.TerminalBlock;
 import net.venitstudios.darkcomputers.item.ModItems;
 
@@ -20,9 +21,32 @@ public class ModBlocks {
             DeferredRegister.createBlocks(DarkComputers.MOD_ID);
 
     public static final DeferredBlock<Block> TERMINAL_BLOCK = registerBlock("terminal_block",
-            () -> new TerminalBlock(BlockBehaviour.Properties.of().strength(3f).requiresCorrectToolForDrops().sound(SoundType.STONE)));
+            () -> new TerminalBlock(BlockBehaviour.Properties.of()
+                    .strength(3f)
+                    .sound(SoundType.STONE)
+                    .isRedstoneConductor(
+                            ( (blockState, blockGetter, blockPos) -> false)
+                    )
+            )
+    );
     public static final DeferredBlock<Block> COMPUTER_BLOCK = registerBlock("computer_block",
-            () -> new ComputerBlock(BlockBehaviour.Properties.of().strength(3f).requiresCorrectToolForDrops().sound(SoundType.STONE)));
+            () -> new ComputerBlock(BlockBehaviour.Properties.of()
+                    .strength(3f)
+                    .sound(SoundType.STONE)
+                    .isRedstoneConductor(
+                            ( (blockState, blockGetter, blockPos) -> false)
+                    )
+            )
+    );
+    public static final DeferredBlock<Block> INTERFACE_BLOCK = registerBlock("interface_block",
+            () -> new InterfaceBlock(BlockBehaviour.Properties.of()
+                    .strength(3f)
+                    .sound(SoundType.STONE)
+                    .isRedstoneConductor(
+                            ( (blockState, blockGetter, blockPos) -> false)
+                    )
+            )
+    );
 
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {

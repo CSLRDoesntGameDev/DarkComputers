@@ -16,12 +16,11 @@ public class ModCreativeTabs {
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, DarkComputers.MOD_ID);
 
     public static final Supplier<CreativeModeTab> DARKCOMPUTERS_TAB = CREATIVE_MODE_TAB.register("darkcomputers_tab",
-            () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.CPU_BASE.get()))
+            () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModBlocks.COMPUTER_BLOCK.asItem()))
                     .title(Component.translatable("creative.darkcomputers.main_tab"))
                     .displayItems((itemDisplayParameters, output) -> {
 
                         // items
-                        output.accept(ModItems.CPU_BASE);
                         output.accept(ModItems.FLOPPY_DISK);
                         output.accept(ModItems.EEPROM);
                         output.accept(ModItems.EEPROM_PROGRAMMER);
@@ -29,6 +28,7 @@ public class ModCreativeTabs {
                         // blocks
 
                         output.accept(ModBlocks.TERMINAL_BLOCK);
+                        output.accept(ModBlocks.INTERFACE_BLOCK);
                         output.accept(ModBlocks.COMPUTER_BLOCK);
                     })
 

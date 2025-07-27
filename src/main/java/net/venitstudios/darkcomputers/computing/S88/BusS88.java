@@ -18,12 +18,10 @@ public class BusS88 {
     public static List<Integer> keyBuffer = new ArrayList<Integer>();
     public static final int[] SCREEN_BUF_RANGE = new int[] {0x2000, 0x21BF};
     public static final int[] CHAR_SET_BUF_RANGE = new int[] {0x2200, 0x2FFF};
-    public static final int KEYBOARD_KEY_RET_ADDRESS = 0x3201;
-    public static final int KEYBOARD_KEY_MOD_ADDRESS = 0x3202;
-    public static final int KEYBOARD_KEY_PRB_ADDRESS = 0x3203;
-    public static final int KEYBOARD_KEY_LEN_ADDRESS = 0x3204;
+    public static final int KEYBOARD_KEY_RET_ADDRESS = 0x3200;
     public static final int START_OF_WRITABLE_SPACE = 0x1FFF;
-
+    public static final int START_OF_BUS_DEVICES = 0x3210;
+    public ArrayList<BusDevice> busDevices = new ArrayList<BusDevice>();
     public ComputerBlockEntity computerBlockEntity;
     public int cyclesPerTick = 100;
     public byte[] memory = new byte[64 * 1024];
@@ -65,10 +63,27 @@ public class BusS88 {
     }
 
     public byte readByte(int address) {
+
+        if (address >= START_OF_BUS_DEVICES && address < START_OF_BUS_DEVICES + 0xFF) {
+            return readBusDevice(address);
+        }
         if (address >= 0 && address < memory.length) {
             return memory[address];
         }
 //        DarkComputers.LOGGER.info("address out of bounds " + address);
+        return 0;
+    }
+
+    public byte readBusDevice(int addr) {
+        for (int i = 0; i < busDevices.size(); i++) {
+            BusDevice device = busDevices.get(i);
+            int address = getAddressOfDevice(device);
+            if (addr >= address && addr < address + device.laneCount) {
+                device.hasUpdated = true;
+                return device.lanes[addr - address];
+            }
+        }
+        DarkComputers.LOGGER.error("Out of bounds read address, returning 0");
         return 0;
     }
 
@@ -77,15 +92,30 @@ public class BusS88 {
             memory[address] = data;
             if (address >= SCREEN_BUF_RANGE[0] && address < SCREEN_BUF_RANGE[1]) {
 //                DarkComputers.LOGGER.info("Screen Buffer Written To");
-                ppu.charBuf[address - SCREEN_BUF_RANGE[0] ] = data;
+                ppu.charBuf[address - SCREEN_BUF_RANGE[0]] = data;
             }
             if (address >= CHAR_SET_BUF_RANGE[0] && address < CHAR_SET_BUF_RANGE[1]) {
 //                DarkComputers.LOGGER.info("Character Buffer Written To");
                 ppu.charRom[address - CHAR_SET_BUF_RANGE[0]] = data;
             }
         }
-        updateElements(address, data);
+        if (address >= START_OF_BUS_DEVICES && address < START_OF_BUS_DEVICES + 0xFF) {
+            writeBusDevice(address, data);
+        }
     }
+
+    public void writeBusDevice(int addr, int data) {
+        for (int i = 0; i < busDevices.size(); i++) {
+            BusDevice device = busDevices.get(i);
+            int address = getAddressOfDevice(device);
+            if (addr >= address && addr < address + device.laneCount) {
+                device.lanes[addr - address] = (byte) data;
+                device.hasUpdated = true;
+            }
+        }
+    }
+
+
 
     public void writeShort(int address, short data) {
         if (address >= START_OF_WRITABLE_SPACE && address < memory.length -1) {
@@ -94,13 +124,16 @@ public class BusS88 {
             writeByte(address, high);
             writeByte(address+1, low);
         }
-        updateElements(address, data);
     }
 
     public short readShort(int address) {
+        if (address == KEYBOARD_KEY_RET_ADDRESS && !keyBuffer.isEmpty()) {
+            int val = keyBuffer.getFirst();
+            keyBuffer.removeFirst();
+            return (short) val;
+        }
         byte byteA = readByte(address);
         byte byteB = readByte(address + 1);
-
         return (short) (((byteA & 0xFF) << 8) | (byteB & 0xFF));
     }
 
@@ -108,25 +141,39 @@ public class BusS88 {
     public void updateKeyState(int keyCode, int modifiers, boolean pressed) {
         if (pressed) {
             keyBuffer.add(keyCode);
-            keyBuffer.add(modifiers);
         } else {
-            keyBuffer.add(keyCode | 0x8000);
-            keyBuffer.add(modifiers);
+            keyBuffer.add(-keyCode);
+        }
+        DarkComputers.LOGGER.info(keyBuffer.toString());
+    }
+
+    public void addDeviceToBus(BusDevice busDevice) {
+        busDevices.add(busDevice);
+        busDevice.bus = this;
+    }
+
+    public void removeDevice(BusDevice busDevice) {
+        busDevices.remove(busDevice);
+    }
+
+    public void removeAllDevices() {
+        for (BusDevice device : busDevices) {
+            removeDevice(device);
         }
     }
 
-    public void updateElements(int addr, short data) {
-        this.memory[KEYBOARD_KEY_LEN_ADDRESS] = (byte) keyBuffer.size();
-        switch (addr) {
-            case (KEYBOARD_KEY_PRB_ADDRESS): {
-                this.memory[KEYBOARD_KEY_RET_ADDRESS] = (byte) keyBuffer.getFirst().intValue();
-                keyBuffer.removeFirst();
-                this.memory[KEYBOARD_KEY_MOD_ADDRESS] = (byte) keyBuffer.getFirst().intValue();
-                keyBuffer.removeFirst();
-                this.memory[KEYBOARD_KEY_PRB_ADDRESS] = 0;
+    public int getAddressOfDevice(BusDevice device) {
+        int address = START_OF_BUS_DEVICES;
+        for (BusDevice scanDevice : busDevices.stream().toList()) {
+            if (scanDevice != device) {
+                address += scanDevice.laneCount;
+            } else {
                 break;
             }
         }
+//        DarkComputers.LOGGER.info("Device " + device + " At Memory " + address);
+        return address;
     }
+
 
 }

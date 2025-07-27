@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "darkcomputers:block/interface_block", "y": 0},
+    "facing=east": { "model": "darkcomputers:block/interface_block", "y": 90},
+    "facing=south": { "model": "darkcomputers:block/interface_block", "y": 180},
+    "facing=west": { "model": "darkcomputers:block/interface_block", "y": 270}
+  }
+}
