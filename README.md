@@ -24,16 +24,11 @@ OpenComputers was the main inspiration for the mod, and early on into developmen
  [DC-S88 CPU Instruction Set (Prone to Changes)](https://docs.google.com/spreadsheets/d/14X9gcP__5zqXYBg-X2ciSdWCh2e-8TFFVkLAnioGjEc/edit?gid=0#gid=0)
 
 # Known Issues
-
-- Certain internal References to EEPROM and Floppy Disk do not properly update when inserted or when world is reloaded<br>
-  - Can be Fixed by re-opening EEPROM Flasher GUI once items are inserted and re-inserting EEPROM into computer<br>
 - Key Actions tend to repeat even when key is tapped
   - S88 Bus does not appear to remove most recent key when reading from buffer
 
 ### Issues with planned Fixes
 
-  - Terminal Text Editor lines go out of bounds and deleted when adding new lines above them.<br>
-  - Terminal Text Editor allows for files to be renamed to empty strings.<br>
 
  ### Inconveniences:  
   - Storage Devices internally point to a directory, Does not clean up that directory when the item is deleted.
