@@ -270,11 +270,14 @@ public class ModPayloads {
 
             ServerPlayer player = (ServerPlayer) context.player();
             ItemStack mainHandItem = player.getMainHandItem();
+            DarkComputers.LOGGER.info("main hand item {}", mainHandItem);
             if (mainHandItem.getItem().equals(ModItems.EEPROM_PROGRAMMER.get())) {
                 ProgrammerContainer container = new ProgrammerContainer(mainHandItem);
 
                 ItemStack storageSource = container.getItem(0);
                 ItemStack storageDestination = container.getItem(1);
+                DarkComputers.LOGGER.info("source {}", storageSource);
+                DarkComputers.LOGGER.info("destination {}", storageDestination);
 
                 if (Objects.equals(GenericStorageItem.getStorageUUID(storageDestination), null)) {
                     DarkComputers.LOGGER.error("INVALID EEPROM");

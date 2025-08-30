@@ -12,8 +12,6 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.venitstudios.darkcomputers.DarkComputers;
 import net.venitstudios.darkcomputers.component.ModDataComponents;
-import net.venitstudios.darkcomputers.computing.components.processor.ProcessorDC16;
-import net.venitstudios.darkcomputers.container.custom.ProgrammerContainer;
 import net.venitstudios.darkcomputers.item.ModItems;
 import net.venitstudios.darkcomputers.network.ModPayloads;
 
@@ -31,7 +29,7 @@ public class ProgrammerScreen extends AbstractContainerScreen<ProgrammerMenu> {
     private ProgrammerMenu programmerMenu;
     private Inventory playerInventory;
 
-    int fileOffset = 0;
+    int fileIndex = 0;
 
     public ProgrammerScreen(ProgrammerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -43,11 +41,11 @@ public class ProgrammerScreen extends AbstractContainerScreen<ProgrammerMenu> {
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         switch (keyCode) {
             case 264: {
-                fileOffset += 1;
+                fileIndex += 1;
                 break;
             }
             case 265: {
-                fileOffset -= 1;
+                fileIndex -= 1;
                 break;
             }
         }
@@ -98,29 +96,25 @@ public class ProgrammerScreen extends AbstractContainerScreen<ProgrammerMenu> {
         guiGraphics.drawString(this.font, ">", this.leftPos + 55, this.topPos + 18, 0xFF3DFF3D, false);
 
         for (int i = 0; i < files.length; i++) {
-            fileOffset = Math.clamp(fileOffset, 0, files.length-1);
-
-            if (i + fileOffset < files.length) {
-                String text = files[i+fileOffset];
-
+            fileIndex = Math.clamp(fileIndex, 0, files.length);
+            if (i + fileIndex < files.length) {
+                String text = files[i + fileIndex];
                 int color = i == 0 ? 0xFF3DFF3D : 0xFF3D3D3D;
-
                 guiGraphics.drawString(this.font, text.substring(0, Math.min(text.length(), 10)), this.leftPos + 55 + 8, this.topPos + 18 + (i * 8), color, false);
-
-
             }
         }
+        guiGraphics.drawString(this.font, "IDX:" + fileIndex, this.leftPos + 55 + 64, this.topPos + 6, 0xFF3D3D3D, false);
 
 
-        // IDEA wouldn't stop giving me an error unless i had this here.
-        String[] finalFiles = files.clone();
+
+        String[] finalFiles = files.clone(); // IDEA wouldn't stop giving me an error unless i had this here.
         this.addRenderableWidget(Button.builder(Component.translatable("gui.eeprom_program"), (button) -> {
 
                 ItemStack floppyStorage = programmerMenu.getSlot(programmerMenu.getItems().size() - 2).getItem();
                 ItemStack eepromStorage = programmerMenu.getSlot(programmerMenu.getItems().size() - 1).getItem();
 
-                if (fileOffset < finalFiles.length) {
-                    String fileName = finalFiles[fileOffset];
+                if (fileIndex < finalFiles.length) {
+                    String fileName = finalFiles[fileIndex];
                     ModPayloads.programmerFlashEeprom eepromPacket = new ModPayloads.programmerFlashEeprom(
                             fileName
                     );
@@ -136,17 +130,8 @@ public class ProgrammerScreen extends AbstractContainerScreen<ProgrammerMenu> {
 
         this.addRenderableWidget(Button.builder(Component.literal(""), (button) -> {
 
-            fileOffset += 1;
-
-            })
-            .pos(this.leftPos + 52, this.topPos + 53)
-            .size(16, 16)
-            .build()
-        );
-
-        this.addRenderableWidget(Button.builder(Component.literal(""), (button) -> {
-
-            fileOffset -= 1;
+            fileIndex += 1;
+            this.minecraft.screen.setFocused(null);
 
             })
             .pos(this.leftPos + 111, this.topPos + 53)
@@ -154,8 +139,19 @@ public class ProgrammerScreen extends AbstractContainerScreen<ProgrammerMenu> {
             .build()
         );
 
-        guiGraphics.blit(DOWN_ARROW_TEXTURE, this.leftPos + 52, this.topPos + 53, 0, 0,16, 16, 16, 16);
-        guiGraphics.blit(UP_ARROW_TEXTURE, this.leftPos + 111, this.topPos + 53, 0, 0, 16, 16, 16, 16);
+        this.addRenderableWidget(Button.builder(Component.literal(""), (button) -> {
+
+            fileIndex -= 1;
+            this.minecraft.screen.setFocused(null);
+
+            })
+            .pos(this.leftPos + 52, this.topPos + 53)
+            .size(16, 16)
+            .build()
+        );
+
+        guiGraphics.blit(DOWN_ARROW_TEXTURE, this.leftPos + 111, this.topPos + 53, 0, 0,16, 16, 16, 16);
+        guiGraphics.blit(UP_ARROW_TEXTURE, this.leftPos + 52, this.topPos + 53, 0, 0, 16, 16, 16, 16);
 
         renderTooltip(guiGraphics, mouseX, mouseY);
     }

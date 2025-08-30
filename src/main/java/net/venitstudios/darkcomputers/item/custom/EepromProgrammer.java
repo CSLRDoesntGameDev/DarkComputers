@@ -57,11 +57,14 @@ public class EepromProgrammer extends Item implements MenuProvider {
                         inventoryStack = player.getOffhandItem();
                     }
 
-
+                    // theres an issue with this not updating, tried to fix it but it didnt seem to help.
                     ProgrammerContainer container = new ProgrammerContainer(inventoryStack);
 
                     ItemStack storageItemA = container.getItem(0);
                     ItemStack storageItemB = container.getItem(1);
+
+//                    DarkComputers.LOGGER.info("Storage item A {}", storageItemA);
+//                    DarkComputers.LOGGER.info("Storage item B {}", storageItemB);
 
                     if (storageItemA.getCount() > 0 && storageItemB.getCount() > 0) {
 
@@ -85,6 +88,8 @@ public class EepromProgrammer extends Item implements MenuProvider {
                     } else {
                         stack.set(ModDataComponents.GENERIC_STORAGE_FILES, ",No Storage Medium");
                     }
+//                    DarkComputers.LOGGER.info("Stack NBT {}", stack.get(ModDataComponents.GENERIC_STORAGE_FILES));
+
                 }
             }
         }

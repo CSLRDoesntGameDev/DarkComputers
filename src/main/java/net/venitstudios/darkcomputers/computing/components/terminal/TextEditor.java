@@ -76,7 +76,7 @@ public class TextEditor {
     }
 
     public File renameFile(File file, String newName) {
-        if ( isServer() ) {
+        if ( isServer() && !newName.isEmpty()) {
             File nf = new File(file.getAbsolutePath().replaceAll(file.getName(), newName));
             file.renameTo(nf);
             return nf;
@@ -162,22 +162,22 @@ public class TextEditor {
                         newFileName = currentFileName;
                     }
                     break;
-                case 69: // e
+                case InputConstants.KEY_E:
                     if (modifiers == 2) {
                         resetEditor();
                     }
                     break;
-                case 78:
-                    if (modifiers == 2) {
+                case InputConstants.KEY_N:
+                    if (modifiers == 2 && !editingFile) {
                         newFile();
                     }
                     break;
-                case 83: // s
+                case InputConstants.KEY_S:
                     if (modifiers == 2) {
                         saveFile();
                     }
                     break;
-                case 264: // down arrow
+                case InputConstants.KEY_DOWN:
                     if (curRow >= fileContents.length) {
                         fileContents = Arrays.copyOf(fileContents, curRow);
                         for (int i = 0; i < curRow; i++) {
@@ -195,38 +195,39 @@ public class TextEditor {
                         curCol = Math.min(curCol, line.length());
                     }
                     break;
-                case 265: // up arrow
+                case InputConstants.KEY_UP:
                     curRow -= curRow > 0 ? 1 : 0;
                     line = fileContents[curRow];
                     if (line == null) line = "";
                     curCol = Math.min(curCol, line.length());
                     break;
-                case 262: // right arrow
+                case InputConstants.KEY_RIGHT: // right arrow
                     line = fileContents[curRow];
                     if (line == null) line = "";
                     curCol += curCol <= line.length() ? modStep : 0;
                     break;
-                case 263: // left arrow
+                case InputConstants.KEY_LEFT:
                     curCol -= curCol > 0 ? modStep : 0;
                     break;
-                case 257: // enter
+                case InputConstants.KEY_RETURN:
                     if (blockEntity.editingFile && !renamingFile) {
                         // stolen from stack overflow :)
                         if (curRow < fileContents.length) {
-                            if (curRow + 1 >= fileContents.length) {
-                                fileContents = Arrays.copyOf(fileContents, fileContents.length + 1);
-                            }
-
                             String lineBefore = fileContents[curRow] != null ? fileContents[curRow] : "";
 
                             String before = lineBefore.substring(0, curCol);
                             String after = lineBefore.substring(curCol);
+
+                            fileContents = Arrays.copyOf(fileContents, fileContents.length + 1);
 
                             for (int i = fileContents.length - 2; i >= curRow + 1; i--) {
                                 fileContents[i + 1] = fileContents[i];
                             }
 
                             fileContents[curRow] = before;
+                            if (curRow + 1 >= fileContents.length) {
+                                fileContents = Arrays.copyOf(fileContents, curRow + 1);
+                            }
                             fileContents[curRow + 1] = after;
 
                             curRow += 1;
@@ -242,12 +243,14 @@ public class TextEditor {
                         }
                     } else {
                         File file = renameFile(currentFile, newFileName);
-                        loadFile(file);
-                        newFileName = currentFileName;
+                        if (file == null) {
+                            loadFile(file);
+                            newFileName = currentFileName;
+                        }
                         renamingFile = false;
                     }
                     break;
-                case 261: // delete
+                case InputConstants.KEY_DELETE:
                     if (curRow < fileContents.length) {
 
                         line = fileContents[curRow];
@@ -258,7 +261,7 @@ public class TextEditor {
                         }
                     }
                     break;
-                case 259: // backspace
+                case InputConstants.KEY_BACKSPACE: // backspace
                     // based on the code stolen from stack overflow :)
                     if (blockEntity.editingFile && !renamingFile) {
                         if (curRow < fileContents.length) {

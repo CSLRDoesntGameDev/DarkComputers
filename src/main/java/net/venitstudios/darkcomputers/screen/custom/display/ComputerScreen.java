@@ -101,8 +101,6 @@ public class ComputerScreen extends AbstractContainerScreen<ComputerMenu> {
 
             }
         }
-
-
     }
 
     @Override
